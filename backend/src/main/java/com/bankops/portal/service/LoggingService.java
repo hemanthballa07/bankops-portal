@@ -21,6 +21,12 @@ public class LoggingService {
     private final LogEventRepository logEventRepository;
     private final ObjectMapper objectMapper;
     
+    // Constructor injection - ObjectMapper is auto-configured by Spring Boot with JavaTimeModule
+    public LoggingService(LogEventRepository logEventRepository, ObjectMapper objectMapper) {
+        this.logEventRepository = logEventRepository;
+        this.objectMapper = objectMapper;
+    }
+    
     @Transactional
     public void logEvent(String correlationId, LogEvent.LogLevel level, String message, Map<String, Object> context) {
         // Set correlation ID in MDC for structured logging

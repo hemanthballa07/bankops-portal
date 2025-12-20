@@ -18,7 +18,7 @@ import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -73,6 +73,8 @@ class TransactionServiceTest {
             return t;
         });
         when(accountRepository.save(any(Account.class))).thenReturn(account);
+        doNothing().when(loggingService).logEvent(anyString(), any(), anyString(), any());
+        doNothing().when(loggingService).logTransactionEvent(any(), any(), anyString(), any());
         
         // When
         TransactionDto result = transactionService.createTransaction(1L, request);
@@ -140,6 +142,8 @@ class TransactionServiceTest {
             return t;
         });
         when(accountRepository.save(any(Account.class))).thenReturn(account);
+        doNothing().when(loggingService).logEvent(anyString(), any(), anyString(), any());
+        doNothing().when(loggingService).logTransactionEvent(any(), any(), anyString(), any());
         
         // When
         TransactionDto result = transactionService.createTransaction(1L, request);
@@ -172,6 +176,8 @@ class TransactionServiceTest {
             return t;
         });
         when(accountRepository.save(any(Account.class))).thenReturn(account);
+        doNothing().when(loggingService).logEvent(anyString(), any(), anyString(), any());
+        doNothing().when(loggingService).logTransactionEvent(any(), any(), anyString(), any());
         
         // When
         TransactionDto result = transactionService.createTransaction(1L, request);
@@ -201,6 +207,8 @@ class TransactionServiceTest {
             return t;
         });
         when(accountRepository.save(any(Account.class))).thenReturn(account);
+        doNothing().when(loggingService).logEvent(anyString(), any(), anyString(), any());
+        doNothing().when(loggingService).logTransactionEvent(any(), any(), anyString(), any());
         
         // When
         TransactionDto result = transactionService.createTransaction(1L, request);
