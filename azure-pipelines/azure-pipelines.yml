@@ -1,0 +1,267 @@
+# Azure DevOps Pipeline for BankOps Portal
+# This pipeline builds, tests, and deploys the BankOps Portal application
+# Prerequisites:
+# - Azure service connection named 'AzureResourceManager' (or update the connection name below)
+# - Azure App Service names configured as variables or parameters
+# - Azure SQL connection string stored as a variable group or secret variable
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    exclude:
+      - '*.md'
+      - 'docs/*'
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+
+variables:
+  - group: bankops-variables  # Optional: Variable group for shared variables
+  - name: backendServiceName
+    value: 'bankops-portal-backend'  # Update with your Azure App Service name
+  - name: frontendServiceName
+    value: 'bankops-portal-frontend'  # Update with your Azure App Service name
+  - name: javaVersion
+    value: '17'
+  - name: nodeVersion
+    value: '18.x'
+
+stages:
+  - stage: Build
+    displayName: 'Build and Test'
+    jobs:
+      - job: BackendBuild
+        displayName: 'Build Backend (Java/Spring Boot)'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: JavaToolInstaller@0
+            inputs:
+              versionSpec: $(javaVersion)
+              jdkArchitecture: 'x64'
+              jdkSource: 'PreInstalled'
+            displayName: 'Setup Java $(javaVersion)'
+
+          - task: Cache@2
+            inputs:
+              key: 'maven | "$(Agent.OS)" | backend/pom.xml'
+              restoreKeys: |
+                maven | "$(Agent.OS)"
+              path: '$(HOME)/.m2'
+            displayName: 'Cache Maven dependencies'
+
+          - script: |
+              cd backend
+              mvn clean compile
+            displayName: 'Compile Backend'
+
+          - script: |
+              cd backend
+              mvn test
+            displayName: 'Run Backend Unit Tests'
+            continueOnError: false
+
+          - script: |
+              cd backend
+              mvn package -DskipTests
+            displayName: 'Package Backend JAR'
+            
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'backend/target/surefire-reports/*.xml'
+              failTaskOnFailedTests: false
+            displayName: 'Publish Test Results'
+
+          - task: PublishCodeCoverageResults@1
+            condition: succeededOrFailed()
+            inputs:
+              codeCoverageTool: 'JaCoCo'
+              summaryFileLocation: 'backend/target/site/jacoco/jacoco.xml'
+            displayName: 'Publish Code Coverage'
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: 'backend/target'
+              Contents: '*.jar'
+              TargetFolder: '$(Build.ArtifactStagingDirectory)/backend'
+            displayName: 'Copy Backend Artifacts'
+
+      - job: FrontendBuild
+        displayName: 'Build Frontend (Angular)'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Setup Node.js $(nodeVersion)'
+
+          - task: Cache@2
+            inputs:
+              key: 'npm | "$(Agent.OS)" | frontend/package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+              path: 'frontend/node_modules'
+            displayName: 'Cache npm dependencies'
+
+          - script: |
+              cd frontend
+              npm ci
+            displayName: 'Install Frontend Dependencies'
+
+          - script: |
+              cd frontend
+              npm run lint
+            displayName: 'Lint Frontend Code'
+            continueOnError: false
+
+          - script: |
+              cd frontend
+              npm test -- --watch=false --browsers=ChromeHeadless --code-coverage
+            displayName: 'Run Frontend Unit Tests'
+            continueOnError: false
+
+          - script: |
+              cd frontend
+              npm run build -- --configuration=production
+            displayName: 'Build Frontend for Production'
+            env:
+              API_URL: $(backendApiUrl)  # Set this variable or use environment-specific values
+
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'frontend/coverage/junit/*.xml'
+              failTaskOnFailedTests: false
+            displayName: 'Publish Frontend Test Results'
+
+          - task: PublishCodeCoverageResults@1
+            condition: succeededOrFailed()
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: 'frontend/coverage/cobertura-coverage.xml'
+            displayName: 'Publish Frontend Coverage'
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: 'frontend/dist/bankops-portal'
+              TargetFolder: '$(Build.ArtifactStagingDirectory)/frontend'
+            displayName: 'Copy Frontend Artifacts'
+
+      - job: PublishArtifacts
+        displayName: 'Publish Build Artifacts'
+        dependsOn:
+          - BackendBuild
+          - FrontendBuild
+        condition: succeeded()
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: PublishBuildArtifacts@1
+            inputs:
+              pathToPublish: '$(Build.ArtifactStagingDirectory)'
+              artifactName: 'drop'
+              publishLocation: 'Container'
+            displayName: 'Publish Artifacts'
+
+  - stage: Deploy_Dev
+    displayName: 'Deploy to Dev Environment'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - deployment: DeployBackend_Dev
+        displayName: 'Deploy Backend to Dev'
+        environment: 'dev'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebApp@1
+                  displayName: 'Deploy Backend to Azure App Service'
+                  inputs:
+                    azureSubscription: 'AzureResourceManager'  # Update with your service connection name
+                    appName: '$(backendServiceName)-dev'  # Update with your dev app service name
+                    package: '$(Pipeline.Workspace)/drop/backend/*.jar'
+                    runtimeStack: 'JAVA|17'
+                    startUpCommand: 'java -jar bankops-portal-1.0.0.jar'
+                    appSettings: |
+                      -AZURE_SQL_URL "$(AzureSqlConnectionString)"  # Set as pipeline variable or variable group
+                      -AZURE_SQL_USERNAME "$(AzureSqlUsername)"
+                      -AZURE_SQL_PASSWORD "$(AzureSqlPassword)"
+                      -SPRING_PROFILES_ACTIVE "prod"
+
+      - deployment: DeployFrontend_Dev
+        displayName: 'Deploy Frontend to Dev'
+        environment: 'dev'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebApp@1
+                  displayName: 'Deploy Frontend to Azure App Service'
+                  inputs:
+                    azureSubscription: 'AzureResourceManager'  # Update with your service connection name
+                    appName: '$(frontendServiceName)-dev'  # Update with your dev app service name
+                    package: '$(Pipeline.Workspace)/drop/frontend'
+                    appSettings: |
+                      -API_URL "https://$(backendServiceName)-dev.azurewebsites.net/api"
+
+  - stage: Deploy_Prod
+    displayName: 'Deploy to Production'
+    dependsOn: Deploy_Dev
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: DeployBackend_Prod
+        displayName: 'Deploy Backend to Production'
+        environment: 'production'  # Requires approval in Azure DevOps
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebApp@1
+                  displayName: 'Deploy Backend to Azure App Service (Prod)'
+                  inputs:
+                    azureSubscription: 'AzureResourceManager'
+                    appName: '$(backendServiceName)'
+                    package: '$(Pipeline.Workspace)/drop/backend/*.jar'
+                    runtimeStack: 'JAVA|17'
+                    startUpCommand: 'java -jar bankops-portal-1.0.0.jar'
+                    appSettings: |
+                      -AZURE_SQL_URL "$(AzureSqlConnectionString-Prod)"
+                      -AZURE_SQL_USERNAME "$(AzureSqlUsername-Prod)"
+                      -AZURE_SQL_PASSWORD "$(AzureSqlPassword-Prod)"
+                      -SPRING_PROFILES_ACTIVE "prod"
+
+      - deployment: DeployFrontend_Prod
+        displayName: 'Deploy Frontend to Production'
+        environment: 'production'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebApp@1
+                  displayName: 'Deploy Frontend to Azure App Service (Prod)'
+                  inputs:
+                    azureSubscription: 'AzureResourceManager'
+                    appName: '$(frontendServiceName)'
+                    package: '$(Pipeline.Workspace)/drop/frontend'
+                    appSettings: |
+                      -API_URL "https://$(backendServiceName).azurewebsites.net/api"
+
