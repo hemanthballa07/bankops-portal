@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "log_events")
+@Table(name = "log_events", indexes = @Index(name = "idx_correlation_id", columnList = "correlation_id"))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,7 +20,7 @@ public class LogEvent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(name = "correlation_id", nullable = false, length = 36, index = true)
+    @Column(name = "correlation_id", nullable = false, length = 36)
     private String correlationId;
     
     @Enumerated(EnumType.STRING)
