@@ -6,15 +6,15 @@
 There's a known issue with Mockito and Java 23 where Mockito cannot mock certain classes. This affects unit tests that mock `LoggingService`.
 
 **Workaround Options:**
-1. Use Java 17 or 21 for testing (recommended)
-2. Use integration tests instead of unit tests for TransactionService
-3. Refactor LoggingService to use an interface
+1. Use Java 17 or 21 for testing (recommended).
+2. Use integration tests instead of unit tests for TransactionService.
+3. Refactor LoggingService to use an interface.
 
 ## Running Tests
 
 ### Backend Tests
 
-**Prerequisites:** Java 17 or 21 (Java 23 has compatibility issues with Mockito)
+**Prerequisites:** Java 17 or 21 (Java 23 has compatibility issues with Mockito).
 
 ```bash
 cd backend
@@ -75,7 +75,7 @@ npm start
 
 Frontend will run on: `http://localhost:4200`
 
-## Integration Testing
+## Integration Testing (Curl Scripts)
 
 ### Test Transaction Flow
 
@@ -110,16 +110,14 @@ curl -u user:password -X POST http://localhost:8080/api/accounts/1/transactions 
   }'
 ```
 
-4. **Check Correlation ID in response** - Should return a UUID
+4. **Check Correlation ID in response** - Should return a UUID.
 
-5. **Search Incident by Correlation ID:**
+5. **Search Incident by Correlation ID (Support Role):**
 ```bash
 curl -u support:password http://localhost:8080/api/incidents/{correlationId}
 ```
 
-## Test Coverage
-
-### Current Coverage
+## Test Coverage Summary
 
 ✅ **Working:**
 - Integration tests (TransactionIntegrationTest)
@@ -131,7 +129,6 @@ curl -u support:password http://localhost:8080/api/incidents/{correlationId}
 
 ## Recommended Testing Strategy
 
-1. **For Development:** Use integration tests which work reliably
-2. **For CI/CD:** Use Java 17 or 21 to avoid Mockito compatibility issues
-3. **For Manual Testing:** Use the frontend UI and curl commands above
-
+1. **For Development:** Use integration tests which work reliably.
+2. **For CI/CD:** Use Java 17 or 21 to avoid Mockito compatibility issues.
+3. **For Manual Testing:** Use the frontend UI and curl commands above.

@@ -65,7 +65,7 @@ stages:
               cd backend
               mvn test
             displayName: 'Run Backend Unit Tests'
-            continueOnError: false
+            continueOnError: false  # strict failure
 
           - script: |
               cd backend
@@ -73,11 +73,11 @@ stages:
             displayName: 'Package Backend JAR'
             
           - task: PublishTestResults@2
-            condition: succeededOrFailed()
+            condition: always()
             inputs:
               testResultsFormat: 'JUnit'
               testResultsFiles: 'backend/target/surefire-reports/*.xml'
-              failTaskOnFailedTests: false
+              failTaskOnFailedTests: true
             displayName: 'Publish Test Results'
 
           - task: PublishCodeCoverageResults@1
@@ -93,6 +93,13 @@ stages:
               Contents: '*.jar'
               TargetFolder: '$(Build.ArtifactStagingDirectory)/backend'
             displayName: 'Copy Backend Artifacts'
+            
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)/backend'
+              ArtifactName: 'backend-drop'
+              publishLocation: 'Container'
+            displayName: 'Publish Backend Artifact'
 
       - job: FrontendBuild
         displayName: 'Build Frontend (Angular)'
