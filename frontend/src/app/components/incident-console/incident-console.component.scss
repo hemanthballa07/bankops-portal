@@ -1,0 +1,110 @@
+.incident-console-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.search-section {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.search-field {
+  flex: 1;
+}
+
+.loading, .error {
+  padding: 20px;
+  text-align: center;
+}
+
+.error {
+  color: #f44336;
+}
+
+.incident-details {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.transaction-section,
+.case-section,
+.log-events-section {
+  h3 {
+    margin-bottom: 12px;
+  }
+}
+
+.log-events-section {
+  mat-card {
+    max-height: 600px;
+    overflow-y: auto;
+  }
+}
+
+.log-item {
+  border-bottom: 1px solid #e0e0e0;
+  padding: 12px 0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.log-content {
+  width: 100%;
+}
+
+.log-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.log-time {
+  color: #666;
+  font-size: 12px;
+}
+
+.log-message {
+  margin: 8px 0;
+}
+
+.log-context {
+  background: #f5f5f5;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  overflow-x: auto;
+}
+
+.log-error {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.log-warn {
+  background-color: #fff3e0;
+  color: #e65100;
+}
+
+.log-info {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.log-debug {
+  background-color: #f3e5f5;
+  color: #6a1b9a;
+}
+
+.no-logs {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
+

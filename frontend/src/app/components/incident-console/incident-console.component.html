@@ -1,0 +1,79 @@
+<div class="incident-console-container">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Incident Console</mat-card-title>
+      <mat-card-subtitle>Search by Correlation ID</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="search-section">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Correlation ID</mat-label>
+          <input matInput [(ngModel)]="correlationId" (keyup.enter)="searchIncident()" placeholder="Enter correlation ID">
+          <button mat-icon-button matSuffix (click)="searchIncident()" [disabled]="loading">
+            <mat-icon>search</mat-icon>
+          </button>
+        </mat-form-field>
+        <button mat-raised-button color="primary" (click)="searchIncident()" [disabled]="loading">
+          Search
+        </button>
+      </div>
+
+      <div *ngIf="loading" class="loading">
+        <p>Loading incident details...</p>
+      </div>
+
+      <div *ngIf="error" class="error">
+        <p>{{ error }}</p>
+      </div>
+
+      <div *ngIf="incident && !loading" class="incident-details">
+        <div class="transaction-section" *ngIf="incident.transaction">
+          <h3>Transaction</h3>
+          <mat-card>
+            <mat-card-content>
+              <p><strong>ID:</strong> {{ incident.transaction.id }}</p>
+              <p><strong>Type:</strong> {{ incident.transaction.type }}</p>
+              <p><strong>Amount:</strong> ${{ incident.transaction.amount | number:'1.2-2' }}</p>
+              <p><strong>Status:</strong> {{ incident.transaction.status }}</p>
+              <p><strong>Created:</strong> {{ incident.transaction.createdAt | date:'short' }}</p>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <div class="case-section" *ngIf="incident.case_">
+          <h3>Related Case</h3>
+          <mat-card>
+            <mat-card-content>
+              <p><strong>ID:</strong> {{ incident.case_.id }}</p>
+              <p><strong>Status:</strong> {{ incident.case_.status }}</p>
+              <p><strong>Severity:</strong> {{ incident.case_.severity }}</p>
+              <p><strong>Summary:</strong> {{ incident.case_.summary }}</p>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <div class="log-events-section">
+          <h3>Log Events Timeline</h3>
+          <mat-card>
+            <mat-card-content>
+              <mat-list>
+                <mat-list-item *ngFor="let log of incident.logEvents" class="log-item">
+                  <div class="log-content">
+                    <div class="log-header">
+                      <mat-chip [class]="getLogLevelClass(log.level)">{{ log.level }}</mat-chip>
+                      <span class="log-time">{{ log.createdAt | date:'short' }}</span>
+                    </div>
+                    <p class="log-message">{{ log.message }}</p>
+                    <pre *ngIf="log.contextJson" class="log-context">{{ log.contextJson | json }}</pre>
+                  </div>
+                </mat-list-item>
+              </mat-list>
+              <p *ngIf="incident.logEvents.length === 0" class="no-logs">No log events found</p>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
+

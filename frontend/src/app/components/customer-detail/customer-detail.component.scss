@@ -1,0 +1,37 @@
+.customer-detail-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.customer-info {
+  margin-bottom: 20px;
+}
+
+.accounts-section {
+  mat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+.create-form {
+  background: #f5f5f5;
+  padding: 20px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.accounts-table {
+  width: 100%;
+  margin-top: 20px;
+}
+

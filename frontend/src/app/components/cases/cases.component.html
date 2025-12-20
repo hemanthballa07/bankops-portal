@@ -1,0 +1,114 @@
+<div class="cases-container">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Support Cases</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="filters">
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select [(ngModel)]="statusFilter" (selectionChange)="onFilter()">
+            <mat-option value="">All</mat-option>
+            <mat-option value="OPEN">Open</mat-option>
+            <mat-option value="INVESTIGATING">Investigating</mat-option>
+            <mat-option value="RESOLVED">Resolved</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Severity</mat-label>
+          <mat-select [(ngModel)]="severityFilter" (selectionChange)="onFilter()">
+            <mat-option value="">All</mat-option>
+            <mat-option value="LOW">Low</mat-option>
+            <mat-option value="MEDIUM">Medium</mat-option>
+            <mat-option value="HIGH">High</mat-option>
+            <mat-option value="CRITICAL">Critical</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <button mat-raised-button color="primary" (click)="toggleCreateForm()">
+          <mat-icon>add</mat-icon>
+          Create Case
+        </button>
+      </div>
+
+      <div *ngIf="showCreateForm" class="create-form">
+        <h3>Create New Case</h3>
+        <mat-form-field appearance="outline">
+          <mat-label>Customer</mat-label>
+          <mat-select [(ngModel)]="newCase.customerId" required>
+            <mat-option *ngFor="let customer of customers" [value]="customer.id">
+              {{ customer.firstName }} {{ customer.lastName }} ({{ customer.email }})
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Summary</mat-label>
+          <textarea matInput [(ngModel)]="newCase.summary" rows="3" required></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Severity</mat-label>
+          <mat-select [(ngModel)]="newCase.severity">
+            <mat-option value="LOW">Low</mat-option>
+            <mat-option value="MEDIUM">Medium</mat-option>
+            <mat-option value="HIGH">High</mat-option>
+            <mat-option value="CRITICAL">Critical</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <div class="form-actions">
+          <button mat-raised-button color="primary" (click)="onCreateCase()">Create</button>
+          <button mat-button (click)="toggleCreateForm()">Cancel</button>
+        </div>
+      </div>
+
+      <table mat-table [dataSource]="cases" class="cases-table">
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef>ID</th>
+          <td mat-cell *matCellDef="let case_">{{ case_.id }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="customerId">
+          <th mat-header-cell *matHeaderCellDef>Customer ID</th>
+          <td mat-cell *matCellDef="let case_">{{ case_.customerId }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let case_">
+            <mat-form-field appearance="outline" class="status-select">
+              <mat-select [value]="case_.status" (selectionChange)="updateCaseStatus(case_.id, $event.value)">
+                <mat-option value="OPEN">Open</mat-option>
+                <mat-option value="INVESTIGATING">Investigating</mat-option>
+                <mat-option value="RESOLVED">Resolved</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="severity">
+          <th mat-header-cell *matHeaderCellDef>Severity</th>
+          <td mat-cell *matCellDef="let case_">{{ case_.severity }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="summary">
+          <th mat-header-cell *matHeaderCellDef>Summary</th>
+          <td mat-cell *matCellDef="let case_">{{ case_.summary }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef>Created</th>
+          <td mat-cell *matCellDef="let case_">{{ case_.createdAt | date:'short' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let case_">
+            <!-- Note: Would need transaction correlationId to link to incident -->
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </mat-card-content>
+  </mat-card>
+</div>
+

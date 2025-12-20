@@ -1,0 +1,98 @@
+<div class="account-detail-container" *ngIf="account">
+  <button mat-button [routerLink]="['/customers', account.customerId]">
+    <mat-icon>arrow_back</mat-icon>
+    Back to Customer
+  </button>
+
+  <mat-card class="account-info">
+    <mat-card-header>
+      <mat-card-title>Account {{ account.id }}</mat-card-title>
+      <mat-card-subtitle>{{ account.type }} - {{ account.status }}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="account-details">
+        <div class="detail-item">
+          <strong>Balance:</strong> ${{ account.balance | number:'1.2-2' }}
+        </div>
+        <div class="detail-item">
+          <strong>Overdraft Enabled:</strong> {{ account.overdraftEnabled ? 'Yes' : 'No' }}
+        </div>
+        <div class="detail-item">
+          <strong>Created:</strong> {{ account.createdAt | date }}
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="transactions-section">
+    <mat-card-header>
+      <mat-card-title>Transactions</mat-card-title>
+      <button mat-raised-button color="primary" (click)="toggleTransactionForm()">
+        <mat-icon>add</mat-icon>
+        New Transaction
+      </button>
+    </mat-card-header>
+    <mat-card-content>
+      <div *ngIf="showTransactionForm" class="transaction-form">
+        <h3>Post Transaction</h3>
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Type</mat-label>
+            <mat-select [(ngModel)]="newTransaction.type">
+              <mat-option value="DEPOSIT">Deposit</mat-option>
+              <mat-option value="WITHDRAWAL">Withdrawal</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Amount</mat-label>
+            <input matInput type="number" [(ngModel)]="newTransaction.amount" min="0.01" step="0.01" required>
+          </mat-form-field>
+        </div>
+        <div class="form-actions">
+          <button mat-raised-button color="primary" (click)="onCreateTransaction()">Submit</button>
+          <button mat-button (click)="toggleTransactionForm()">Cancel</button>
+        </div>
+      </div>
+
+      <table mat-table [dataSource]="transactions" class="transactions-table">
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef>ID</th>
+          <td mat-cell *matCellDef="let transaction">{{ transaction.id }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="type">
+          <th mat-header-cell *matHeaderCellDef>Type</th>
+          <td mat-cell *matCellDef="let transaction">{{ transaction.type }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="amount">
+          <th mat-header-cell *matHeaderCellDef>Amount</th>
+          <td mat-cell *matCellDef="let transaction">${{ transaction.amount | number:'1.2-2' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let transaction">{{ transaction.status }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="correlationId">
+          <th mat-header-cell *matHeaderCellDef>Correlation ID</th>
+          <td mat-cell *matCellDef="let transaction">
+            <button mat-button (click)="viewIncident(transaction.correlationId)" class="correlation-link">
+              {{ transaction.correlationId }}
+            </button>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef>Date</th>
+          <td mat-cell *matCellDef="let transaction">{{ transaction.createdAt | date:'short' }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </mat-card-content>
+  </mat-card>
+</div>
+

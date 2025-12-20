@@ -1,0 +1,49 @@
+.customers-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.search-bar {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.search-field {
+  flex: 1;
+}
+
+.create-button {
+  height: 56px;
+}
+
+.create-form {
+  background: #f5f5f5;
+  padding: 20px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  mat-form-field {
+    flex: 1;
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.customers-table {
+  width: 100%;
+  margin-top: 20px;
+}
+
