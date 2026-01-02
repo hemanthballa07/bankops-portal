@@ -17,22 +17,23 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AccountService {
-    
+
     private final AccountRepository accountRepository;
     private final CustomerRepository customerRepository;
-    
+    private final AuditEventService auditEventService;
+
     @Transactional
     public AccountDto createAccount(Long customerId, CreateAccountRequest request) {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found with id: " + customerId));
-        
+
         Account.AccountType accountType;
         try {
             accountType = Account.AccountType.valueOf(request.getType().toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid account type: " + request.getType());
         }
-        
+
         Account account = Account.builder()
                 .customer(customer)
                 .type(accountType)
@@ -40,29 +41,31 @@ public class AccountService {
                 .balance(java.math.BigDecimal.ZERO)
                 .overdraftEnabled(false)
                 .build();
-        
+
         account = accountRepository.save(account);
         return toDto(account);
     }
-    
+
     public List<AccountDto> getAccountsByCustomerId(Long customerId) {
         List<Account> accounts = accountRepository.findByCustomerId(customerId);
         return accounts.stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
-    
+
     public AccountDto getAccountById(Long id) {
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found with id: " + id));
         return toDto(account);
     }
-    
+
     @Transactional
     public AccountDto updateAccount(Long id, UpdateAccountRequest request) {
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found with id: " + id));
-        
+
+        Account.AccountStatus oldStatus = account.getStatus();
+
         if (request.getStatus() != null) {
             try {
                 account.setStatus(Account.AccountStatus.valueOf(request.getStatus().toUpperCase()));
@@ -70,15 +73,31 @@ public class AccountService {
                 throw new IllegalArgumentException("Invalid account status: " + request.getStatus());
             }
         }
-        
+
         if (request.getOverdraftEnabled() != null) {
             account.setOverdraftEnabled(request.getOverdraftEnabled());
         }
-        
+
         account = accountRepository.save(account);
+
+        // Record audit event if status changed
+        if (request.getStatus() != null && !oldStatus.equals(account.getStatus())) {
+            java.util.Map<String, Object> auditOldValue = new java.util.HashMap<>();
+            auditOldValue.put("status", oldStatus.name());
+            java.util.Map<String, Object> auditNewValue = new java.util.HashMap<>();
+            auditNewValue.put("status", account.getStatus().name());
+            auditEventService.recordEvent(
+                    com.bankops.portal.entity.AuditEvent.EntityType.ACCOUNT,
+                    id,
+                    com.bankops.portal.entity.AuditEvent.Action.STATUS_CHANGE,
+                    auditOldValue,
+                    auditNewValue,
+                    "SYSTEM");
+        }
+
         return toDto(account);
     }
-    
+
     private AccountDto toDto(Account account) {
         return AccountDto.builder()
                 .id(account.getId())
@@ -91,4 +110,3 @@ public class AccountService {
                 .build();
     }
 }
-
