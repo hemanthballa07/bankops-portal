@@ -28,4 +28,10 @@ public class SupportCaseDto {
     private List<Long> relatedTransactionIds;
     private LocalDateTime resolvedAt;
     private String resolution;
+
+    // SLA fields
+    private String priority;
+    private LocalDateTime slaDueAt;
+    private String slaStatus;
+    private Long slaRemainingSeconds;
 }

@@ -77,6 +77,9 @@ public class CaseService {
                                 .correlationId(correlationId)
                                 .build();
 
+
+                // Initialize SLA with default P2 priority
+                slaService.initializeSla(supportCase, SlaPriority.P2);
                 supportCase = caseRepository.save(supportCase);
                 return toDto(supportCase);
         }
@@ -108,6 +111,20 @@ public class CaseService {
                                         supportCase, newState, "SYSTEM",
                                         supportCase.getCorrelationId(), "Status update via API");
                         supportCase.setState(resultState);
+                
+                // SLA lifecycle hooks based on state transitions
+                if (newState == CaseState.PENDING_CUSTOMER && oldState != CaseState.PENDING_CUSTOMER) {
+                        // Entering PENDING_CUSTOMER: pause SLA
+                        slaService.pauseSla(supportCase);
+                } else if (oldState == CaseState.PENDING_CUSTOMER && newState != CaseState.PENDING_CUSTOMER) {
+                        // Leaving PENDING_CUSTOMER: resume SLA
+                        slaService.resumeSla(supportCase);
+                }
+                
+                if (newState == CaseState.RESOLVED || newState == CaseState.CLOSED) {
+                        // Entering terminal state: stop SLA
+                        slaService.stopSla(supportCase);
+                }
                 }
 
                 supportCase = caseRepository.save(supportCase);
@@ -130,7 +147,11 @@ public class CaseService {
                                 .createdAt(supportCase.getCreatedAt())
                                 .updatedAt(supportCase.getUpdatedAt())
                                 .assignedTo(supportCase.getAssignedTo())
-                                .correlationId(supportCase.getCorrelationId())
+                                .priority(supportCase.getPriority() != null ? supportCase.getPriority().name() : null)
+                                .slaDueAt(supportCase.getSlaDueAt())
+                                .slaStatus(supportCase.getSlaStatus() != null ? supportCase.getSlaStatus().name() : null)
+                                .slaRemainingSeconds(slaService.getRemainingTime(supportCase) != null 
+                                        ? slaService.getRemainingTime(supportCase).getSeconds() : null)
                                 .notes(supportCase.getNotes().stream()
                                                 .map(this::toCaseNoteDto)
                                                 .collect(Collectors.toList()))
@@ -281,5 +302,36 @@ public class CaseService {
                                 .currentState(currentState.name())
                                 .allowedTransitions(transitionDtos)
                                 .build();
+        }
+
+        /**
+         * Get KPI metrics for case dashboard
+         */
+        public com.bankops.portal.dto.CaseKpiDto getKpis() {
+                List<SupportCase> allCases = caseRepository.findAll();
+                
+                int open = (int) allCases.stream()
+                        .filter(c -> c.getState() != CaseState.RESOLVED && c.getState() != CaseState.CLOSED)
+                        .count();
+                
+                int unassigned = (int) allCases.stream()
+                        .filter(c -> c.getAssignedTo() == null && c.getState() == CaseState.NEW)
+                        .count();
+                
+                int slaAtRisk = (int) allCases.stream()
+                        .filter(c -> c.getSlaStatus() == com.bankops.portal.sla.SlaStatus.AT_RISK 
+                                  || c.getSlaStatus() == com.bankops.portal.sla.SlaStatus.BREACHED)
+                        .count();
+                
+                int highSeverity = (int) allCases.stream()
+                        .filter(c -> c.getSeverity() == SupportCase.CaseSeverity.HIGH)
+                        .count();
+                
+                return com.bankops.portal.dto.CaseKpiDto.builder()
+                        .openCases(open)
+                        .unassignedCases(unassigned)
+                        .slaAtRiskCases(slaAtRisk)
+                        .highSeverityCases(highSeverity)
+                        .build();
         }
 }

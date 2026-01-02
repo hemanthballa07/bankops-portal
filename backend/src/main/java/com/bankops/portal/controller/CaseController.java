@@ -100,4 +100,9 @@ public class CaseController {
         CaseTransitionsDto transitions = caseService.getAllowedTransitions(id);
         return ResponseEntity.ok(transitions);
     }
+    @GetMapping("/kpis")
+    public ResponseEntity<com.bankops.portal.dto.CaseKpiDto> getKpis() {
+        com.bankops.portal.dto.CaseKpiDto kpis = caseService.getKpis();
+        return ResponseEntity.ok(kpis);
 }
+    }
