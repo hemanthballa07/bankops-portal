@@ -9,6 +9,8 @@ import com.bankops.portal.dto.AssignCaseRequest;
 import com.bankops.portal.dto.ResolveCaseRequest;
 import com.bankops.portal.entity.*;
 import com.bankops.portal.repository.*;
+import com.bankops.portal.sla.SlaService;
+import com.bankops.portal.sla.SlaPriority;
 import com.bankops.portal.statemachine.CaseState;
 import com.bankops.portal.statemachine.CaseStateMachine;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ public class CaseService {
         private final CaseNoteRepository caseNoteRepository;
         private final AuditEventService auditEventService;
         private final CaseStateMachine stateMachine;
+        private final SlaService slaService;
 
         @Transactional
         public SupportCaseDto createCase(CreateCaseRequest request) {

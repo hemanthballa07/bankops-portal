@@ -1,5 +1,7 @@
 package com.bankops.portal.entity;
 
+import com.bankops.portal.sla.SlaPriority;
+import com.bankops.portal.sla.SlaStatus;
 import com.bankops.portal.statemachine.CaseState;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -59,6 +61,26 @@ public class SupportCase {
 
     @Column(name = "correlation_id", length = 100)
     private String correlationId;
+
+    // ========== SLA Fields ==========
+
+    @Column(name = "priority")
+    @Enumerated(EnumType.STRING)
+    private SlaPriority priority;
+
+    @Column(name = "sla_due_at")
+    private LocalDateTime slaDueAt;
+
+    @Column(name = "sla_status")
+    @Enumerated(EnumType.STRING)
+    private SlaStatus slaStatus;
+
+    @Column(name = "paused_at")
+    private LocalDateTime pausedAt;
+
+    @Column(name = "total_paused_duration_seconds")
+    @Builder.Default
+    private Long totalPausedDurationSeconds = 0L;
 
     @OneToMany(mappedBy = "supportCase", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
