@@ -1,11 +1,94 @@
-/* You can add global styles to this file, and also import other style files */
+/* Global Styles - BankOps Portal */
 
-html, body {
+// Import design tokens and mixins
+@import 'styles/variables';
+@import 'styles/mixins';
+
+// ============================================
+// BASE STYLES
+// ============================================
+html,
+body {
   height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  line-height: $line-height-normal;
+  color: $color-text-primary;
+  background-color: $color-bg-secondary;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+// ============================================
+// MATERIAL OVERRIDES
+// ============================================
+.mat-mdc-card {
+  @include card($elevation-sm);
+  margin-bottom: $spacing-lg;
+}
+
+.mat-mdc-table {
+  background: $color-bg-primary;
+
+  .mat-mdc-header-row {
+    background-color: $color-bg-secondary;
+  }
+}
+
+// Dense table modifier
+.dense-table {
+  @include dense-table;
+}
+
+// ============================================
+// UTILITY CLASSES
+// ============================================
+.truncate {
+  @include truncate;
+}
+
+.custom-scrollbar {
+  @include custom-scrollbar;
+}
+
+// Spacing utilities
+.mt-sm {
+  margin-top: $spacing-sm;
+}
+
+.mt-md {
+  margin-top: $spacing-md;
+}
+
+.mt-lg {
+  margin-top: $spacing-lg;
+}
+
+.mb-sm {
+  margin-bottom: $spacing-sm;
+}
+
+.mb-md {
+  margin-bottom: $spacing-md;
+}
+
+.mb-lg {
+  margin-bottom: $spacing-lg;
+}
+
+.p-sm {
+  padding: $spacing-sm;
+}
+
+.p-md {
+  padding: $spacing-md;
+}
+
+.p-lg {
+  padding: $spacing-lg;
+}

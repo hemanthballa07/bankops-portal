@@ -7,3 +7,7 @@ public class UpdateCaseRequest {
     private String status; // OPEN, INVESTIGATING, RESOLVED
 }
 
+
+
+
+

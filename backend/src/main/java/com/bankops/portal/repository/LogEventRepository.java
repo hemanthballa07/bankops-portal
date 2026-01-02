@@ -12,3 +12,7 @@ public interface LogEventRepository extends JpaRepository<LogEvent, Long> {
     List<LogEvent> findByCorrelationIdOrderByCreatedAtAsc(String correlationId);
 }
 
+
+
+
+

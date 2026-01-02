@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -21,5 +22,9 @@ public class SupportCaseDto {
     private String summary;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String assignedTo;
+    private List<CaseNoteDto> notes;
+    private List<Long> relatedTransactionIds;
+    private LocalDateTime resolvedAt;
+    private String resolution;
 }
-

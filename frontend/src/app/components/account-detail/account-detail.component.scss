@@ -60,3 +60,59 @@
   font-size: 12px;
 }
 
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+
+  mat-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: #ccc;
+    margin-bottom: 16px;
+  }
+
+  p {
+    margin: 8px 0;
+    font-size: 16px;
+  }
+
+  .hint {
+    font-size: 14px;
+    color: #999;
+  }
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+
+  &.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+  }
+
+  &.status-completed {
+    background-color: #d4edda;
+    color: #155724;
+  }
+
+  &.status-failed {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+}
+
+
+

@@ -1,0 +1,136 @@
+// Design Tokens - Spacing, Colors, Elevation, Transitions
+// Based on 8px spacing grid for consistency
+
+// ============================================
+// SPACING (8px base unit)
+// ============================================
+$spacing-unit: 8px;
+$spacing-xs: $spacing-unit * 0.5; // 4px
+$spacing-sm: $spacing-unit; // 8px
+$spacing-md: $spacing-unit * 2; // 16px
+$spacing-lg: $spacing-unit * 3; // 24px
+$spacing-xl: $spacing-unit * 4; // 32px
+$spacing-2xl: $spacing-unit * 6; // 48px
+
+// ============================================
+// COLORS - Background
+// ============================================
+$color-bg-primary: #FFFFFF;
+$color-bg-secondary: #F7F8FA;
+$color-bg-tertiary: #EBEDF0;
+$color-bg-hover: #F3F4F6;
+$color-bg-selected: #E5E7EB;
+
+// ============================================
+// COLORS - Borders
+// ============================================
+$color-border: #E1E4E8;
+$color-border-strong: #D1D5DB;
+$color-border-focus: #2196F3;
+
+// ============================================
+// COLORS - Text
+// ============================================
+$color-text-primary: #1F2937;
+$color-text-secondary: #6B7280;
+$color-text-tertiary: #9CA3AF;
+$color-text-inverse: #FFFFFF;
+
+// ============================================
+// COLORS - Status
+// ============================================
+$color-success: #10B981;
+$color-success-bg: #D1FAE5;
+$color-warning: #F59E0B;
+$color-warning-bg: #FEF3C7;
+$color-error: #EF4444;
+$color-error-bg: #FEE2E2;
+$color-info: #3B82F6;
+$color-info-bg: #DBEAFE;
+
+// ============================================
+// COLORS - Priority
+// ============================================
+$color-priority-0: #9C27B0; // Critical (Purple)
+$color-priority-1: #F44336; // High (Red)
+$color-priority-2: #FF9800; // Medium (Orange)
+$color-priority-3: #2196F3; // Low (Blue)
+
+// ============================================
+// COLORS - SLA
+// ============================================
+$color-sla-ok: #10B981;
+$color-sla-warning: #FF9800;
+$color-sla-critical: #F44336;
+
+// ============================================
+// ELEVATION (Box Shadows)
+// ============================================
+$elevation-none: none;
+$elevation-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+$elevation-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.06);
+$elevation-md: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+$elevation-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+$elevation-xl: 0 20px 25px rgba(0, 0, 0, 0.15), 0 10px 10px rgba(0, 0, 0, 0.04);
+
+// ============================================
+// TRANSITIONS
+// ============================================
+$transition-fast: 150ms ease;
+$transition-normal: 200ms ease;
+$transition-slow: 300ms ease;
+
+// ============================================
+// TYPOGRAPHY
+// ============================================
+$font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+$font-family-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+
+$font-size-xs: 11px;
+$font-size-sm: 13px;
+$font-size-base: 14px;
+$font-size-md: 16px;
+$font-size-lg: 18px;
+$font-size-xl: 20px;
+$font-size-2xl: 24px;
+$font-size-3xl: 30px;
+
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+$line-height-tight: 1.25;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.75;
+
+// ============================================
+// BORDERS
+// ============================================
+$border-radius-sm: 4px;
+$border-radius-md: 6px;
+$border-radius-lg: 8px;
+$border-radius-xl: 12px;
+$border-radius-full: 9999px;
+
+$border-width: 1px;
+$border-width-thick: 2px;
+
+// ============================================
+// LAYOUT
+// ============================================
+$sidebar-width-expanded: 240px;
+$sidebar-width-collapsed: 64px;
+$header-height: 64px;
+$page-max-width: 1600px;
+
+// ============================================
+// Z-INDEX
+// ============================================
+$z-index-dropdown: 1000;
+$z-index-sticky: 1020;
+$z-index-fixed: 1030;
+$z-index-modal-backdrop: 1040;
+$z-index-modal: 1050;
+$z-index-popover: 1060;
+$z-index-tooltip: 1070;

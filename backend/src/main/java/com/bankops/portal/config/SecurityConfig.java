@@ -38,8 +38,8 @@ public class SecurityConfig {
                                                 .requestMatchers("/h2-console/**").permitAll()
                                                 .requestMatchers("/customers/**").hasAnyRole("USER", "SUPPORT")
                                                 .requestMatchers("/accounts/**").hasAnyRole("USER", "SUPPORT")
-                                                .requestMatchers("/cases/**").hasRole("SUPPORT")
-                                                .requestMatchers("/incidents/**").hasRole("SUPPORT")
+                                                .requestMatchers("/cases/**").hasAnyRole("USER", "SUPPORT")
+                                                .requestMatchers("/incidents/**").hasAnyRole("USER", "SUPPORT")
                                                 .requestMatchers("/audit/**").hasAnyRole("ADMIN", "SUPPORT")
                                                 .anyRequest().authenticated())
                                 .httpBasic(httpBasic -> {

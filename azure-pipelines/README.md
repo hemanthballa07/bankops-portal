@@ -138,3 +138,7 @@ Manual runs can be triggered from the Azure DevOps Pipelines UI.
 4. **Use service principals** instead of user accounts for service connections
 5. **Restrict access** to pipeline variables and service connections
 
+
+
+
+

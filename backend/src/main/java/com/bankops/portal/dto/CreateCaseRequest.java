@@ -20,3 +20,7 @@ public class CreateCaseRequest {
     private String severity; // LOW, MEDIUM, HIGH, CRITICAL
 }
 
+
+
+
+

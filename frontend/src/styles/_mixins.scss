@@ -1,0 +1,177 @@
+// Reusable SCSS Mixins for common patterns
+
+@import 'variables';
+
+// ============================================
+// CARD MIXIN
+// ============================================
+@mixin card($elevation: $elevation-sm) {
+    background: $color-bg-primary;
+    border-radius: $border-radius-md;
+    box-shadow: $elevation;
+    padding: $spacing-lg;
+}
+
+// ============================================
+// DENSE TABLE MIXIN
+// ============================================
+@mixin dense-table {
+
+    td,
+    th {
+        padding: $spacing-sm $spacing-md;
+        height: 44px;
+        font-size: $font-size-sm;
+    }
+
+    th {
+        font-weight: $font-weight-semibold;
+        color: $color-text-secondary;
+        border-bottom: $border-width solid $color-border-strong;
+    }
+
+    tr:hover {
+        background-color: $color-bg-hover;
+        transition: background-color $transition-fast;
+    }
+}
+
+// ============================================
+// STATUS CHIP MIXIN
+// ============================================
+@mixin status-chip($bg-color, $text-color: white) {
+    background-color: $bg-color;
+    color: $text-color;
+    padding: $spacing-xs $spacing-sm;
+    border-radius: $border-radius-full;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+}
+
+// ============================================
+// SKELETON LOADER MIXIN
+// ============================================
+@mixin skeleton-loader {
+    background: linear-gradient(90deg,
+            $color-bg-tertiary 25%,
+            $color-bg-secondary 50%,
+            $color-bg-tertiary 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: $border-radius-sm;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+// ============================================
+// EMPTY STATE MIXIN
+// ============================================
+@mixin empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: $spacing-2xl;
+    text-align: center;
+    color: $color-text-secondary;
+
+    mat-icon {
+        font-size: 64px;
+        width: 64px;
+        height: 64px;
+        color: $color-text-tertiary;
+        margin-bottom: $spacing-lg;
+    }
+
+    h3 {
+        margin: 0 0 $spacing-sm 0;
+        color: $color-text-primary;
+        font-size: $font-size-lg;
+        font-weight: $font-weight-semibold;
+    }
+
+    p {
+        margin: 0 0 $spacing-lg 0;
+        max-width: 400px;
+    }
+}
+
+// ============================================
+// FOCUS RING MIXIN
+// ============================================
+@mixin focus-ring {
+    outline: 2px solid $color-border-focus;
+    outline-offset: 2px;
+}
+
+// ============================================
+// TRUNCATE TEXT MIXIN
+// ============================================
+@mixin truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+// ============================================
+// SCROLLBAR MIXIN
+// ============================================
+@mixin custom-scrollbar {
+    &::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: $color-bg-secondary;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: $color-border-strong;
+        border-radius: $border-radius-full;
+
+        &:hover {
+            background: $color-text-tertiary;
+        }
+    }
+}
+
+// ============================================
+// RESPONSIVE BREAKPOINTS
+// ============================================
+@mixin mobile {
+    @media (max-width: 767px) {
+        @content;
+    }
+}
+
+@mixin tablet {
+    @media (min-width: 768px) and (max-width: 1023px) {
+        @content;
+    }
+}
+
+@mixin desktop {
+    @media (min-width: 1024px) {
+        @content;
+    }
+}
+
+@mixin large-desktop {
+    @media (min-width: 1440px) {
+        @content;
+    }
+}

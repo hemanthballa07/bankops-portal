@@ -3,6 +3,10 @@ package com.bankops.portal.service;
 import com.bankops.portal.dto.CreateCaseRequest;
 import com.bankops.portal.dto.SupportCaseDto;
 import com.bankops.portal.dto.UpdateCaseRequest;
+import com.bankops.portal.dto.CaseNoteDto;
+import com.bankops.portal.dto.AddCaseNoteRequest;
+import com.bankops.portal.dto.AssignCaseRequest;
+import com.bankops.portal.dto.ResolveCaseRequest;
 import com.bankops.portal.entity.*;
 import com.bankops.portal.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +24,7 @@ public class CaseService {
     private final CustomerRepository customerRepository;
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final CaseNoteRepository caseNoteRepository;
     private final AuditEventService auditEventService;
 
     @Transactional
@@ -144,6 +149,135 @@ public class CaseService {
                 .summary(supportCase.getSummary())
                 .createdAt(supportCase.getCreatedAt())
                 .updatedAt(supportCase.getUpdatedAt())
+                .assignedTo(supportCase.getAssignedTo())
+                .notes(supportCase.getNotes().stream()
+                        .map(this::toCaseNoteDto)
+                        .collect(Collectors.toList()))
+                .relatedTransactionIds(supportCase.getRelatedTransactions().stream()
+                        .map(Transaction::getId)
+                        .collect(Collectors.toList()))
+                .resolvedAt(supportCase.getResolvedAt())
+                .resolution(supportCase.getResolution())
                 .build();
+    }
+
+    private CaseNoteDto toCaseNoteDto(CaseNote note) {
+        return CaseNoteDto.builder()
+                .id(note.getId())
+                .author(note.getAuthor())
+                .content(note.getContent())
+                .createdAt(note.getCreatedAt())
+                .build();
+    }
+
+    @Transactional
+    public SupportCaseDto assignCase(Long caseId, AssignCaseRequest request) {
+        SupportCase supportCase = caseRepository.findById(caseId)
+                .orElseThrow(() -> new IllegalArgumentException("Case not found with id: " + caseId));
+
+        String oldAssignee = supportCase.getAssignedTo();
+        supportCase.setAssignedTo(request.getAssignedTo());
+        supportCase = caseRepository.save(supportCase);
+
+        // Record audit event
+        java.util.Map<String, Object> auditOldValue = new java.util.HashMap<>();
+        auditOldValue.put("assignedTo", oldAssignee);
+        java.util.Map<String, Object> auditNewValue = new java.util.HashMap<>();
+        auditNewValue.put("assignedTo", request.getAssignedTo());
+        auditEventService.recordEvent(
+                AuditEvent.EntityType.CASE,
+                caseId,
+                AuditEvent.Action.UPDATE,
+                auditOldValue,
+                auditNewValue,
+                request.getAssignedTo());
+
+        return toDto(supportCase);
+    }
+
+    @Transactional
+    public CaseNoteDto addCaseNote(Long caseId, AddCaseNoteRequest request, String author) {
+        SupportCase supportCase = caseRepository.findById(caseId)
+                .orElseThrow(() -> new IllegalArgumentException("Case not found with id: " + caseId));
+
+        CaseNote note = CaseNote.builder()
+                .supportCase(supportCase)
+                .author(author)
+                .content(request.getContent())
+                .build();
+
+        note = caseNoteRepository.save(note);
+        supportCase.getNotes().add(note);
+
+        // Record audit event
+        java.util.Map<String, Object> auditNewValue = new java.util.HashMap<>();
+        auditNewValue.put("noteId", note.getId());
+        auditNewValue.put("author", author);
+        auditNewValue.put("content", request.getContent());
+        auditEventService.recordEvent(
+                AuditEvent.EntityType.CASE,
+                caseId,
+                AuditEvent.Action.UPDATE,
+                null,
+                auditNewValue,
+                author);
+
+        return toCaseNoteDto(note);
+    }
+
+    @Transactional
+    public SupportCaseDto linkTransaction(Long caseId, Long transactionId) {
+        SupportCase supportCase = caseRepository.findById(caseId)
+                .orElseThrow(() -> new IllegalArgumentException("Case not found with id: " + caseId));
+
+        Transaction transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new IllegalArgumentException("Transaction not found with id: " + transactionId));
+
+        if (!supportCase.getRelatedTransactions().contains(transaction)) {
+            supportCase.getRelatedTransactions().add(transaction);
+            supportCase = caseRepository.save(supportCase);
+
+            // Record audit event
+            java.util.Map<String, Object> auditNewValue = new java.util.HashMap<>();
+            auditNewValue.put("linkedTransactionId", transactionId);
+            auditEventService.recordEvent(
+                    AuditEvent.EntityType.CASE,
+                    caseId,
+                    AuditEvent.Action.UPDATE,
+                    null,
+                    auditNewValue,
+                    "SYSTEM");
+        }
+
+        return toDto(supportCase);
+    }
+
+    @Transactional
+    public SupportCaseDto resolveCase(Long caseId, ResolveCaseRequest request) {
+        SupportCase supportCase = caseRepository.findById(caseId)
+                .orElseThrow(() -> new IllegalArgumentException("Case not found with id: " + caseId));
+
+        if (supportCase.getStatus() == SupportCase.CaseStatus.RESOLVED) {
+            throw new IllegalStateException("Case is already resolved");
+        }
+
+        supportCase.setStatus(SupportCase.CaseStatus.RESOLVED);
+        supportCase.setResolvedAt(java.time.LocalDateTime.now());
+        supportCase.setResolution(request.getResolution());
+        supportCase = caseRepository.save(supportCase);
+
+        // Record audit event
+        java.util.Map<String, Object> auditNewValue = new java.util.HashMap<>();
+        auditNewValue.put("status", "RESOLVED");
+        auditNewValue.put("resolution", request.getResolution());
+        auditEventService.recordEvent(
+                AuditEvent.EntityType.CASE,
+                caseId,
+                AuditEvent.Action.STATUS_CHANGE,
+                null,
+                auditNewValue,
+                "SYSTEM");
+
+        return toDto(supportCase);
     }
 }

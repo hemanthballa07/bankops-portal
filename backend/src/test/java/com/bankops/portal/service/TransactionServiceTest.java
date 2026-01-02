@@ -4,257 +4,415 @@ import com.bankops.portal.dto.CreateTransactionRequest;
 import com.bankops.portal.dto.TransactionDto;
 import com.bankops.portal.entity.Account;
 import com.bankops.portal.entity.Customer;
+import com.bankops.portal.entity.LogEvent;
 import com.bankops.portal.entity.Transaction;
 import com.bankops.portal.repository.AccountRepository;
+import com.bankops.portal.repository.LogEventRepository;
 import com.bankops.portal.repository.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("TransactionService Unit Tests")
 class TransactionServiceTest {
-    
+
     @Mock
     private TransactionRepository transactionRepository;
-    
+
     @Mock
     private AccountRepository accountRepository;
-    
+
+    @Mock
+    private LogEventRepository logEventRepository;
+
     @Mock
     private LoggingService loggingService;
-    
+
     @InjectMocks
     private TransactionService transactionService;
-    
-    private Customer customer;
-    private Account account;
-    
+
+    private Account testAccount;
+    private Customer testCustomer;
+
     @BeforeEach
     void setUp() {
-        customer = Customer.builder()
+        // Arrange: Set up test data
+        testCustomer = Customer.builder()
                 .id(1L)
                 .firstName("John")
                 .lastName("Doe")
-                .email("john.doe@example.com")
-                .phone("123-456-7890")
+                .email("john@example.com")
+                .phone("555-1234")
                 .build();
-        
-        account = Account.builder()
-                .id(1L)
-                .customer(customer)
+
+        testAccount = Account.builder()
+                .id(100L)
+                .customer(testCustomer)
                 .type(Account.AccountType.CHEQUING)
                 .status(Account.AccountStatus.OPEN)
-                .balance(new BigDecimal("100.00"))
+                .balance(new BigDecimal("1000.00"))
                 .overdraftEnabled(false)
+                .createdAt(LocalDateTime.now())
                 .build();
     }
-    
+
+    // ========== Successful Transaction Tests ==========
+
     @Test
-    void testDeposit_IncreasesBalance() {
-        // Given
+    @DisplayName("Should successfully create a deposit transaction")
+    void testCreateDeposit_Success() {
+        // Arrange
         CreateTransactionRequest request = new CreateTransactionRequest();
         request.setType("DEPOSIT");
-        request.setAmount(new BigDecimal("50.00"));
-        
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+        request.setAmount(new BigDecimal("500.00"));
+        request.setDescription("Paycheck deposit");
+        request.setCategory("OTHER");
+
+        when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
             Transaction t = invocation.getArgument(0);
-            t.setId(100L);
+            t.setId(1L);
             return t;
         });
-        when(accountRepository.save(any(Account.class))).thenReturn(account);
-        doNothing().when(loggingService).logEvent(anyString(), any(), anyString(), any());
-        doNothing().when(loggingService).logTransactionEvent(any(), any(), anyString(), any());
-        
-        // When
-        TransactionDto result = transactionService.createTransaction(1L, request);
-        
-        // Then
+        when(accountRepository.save(any(Account.class))).thenReturn(testAccount);
+
+        // Act
+        TransactionDto result = transactionService.createTransaction(100L, request, null);
+
+        // Assert
         assertNotNull(result);
-        assertNotNull(result.getCorrelationId());
         assertEquals("DEPOSIT", result.getType());
-        assertEquals(new BigDecimal("50.00"), result.getAmount());
-        assertEquals("COMPLETED", result.getStatus());
-        
-        // Verify balance was updated
-        verify(accountRepository, times(1)).save(argThat(acc -> 
-            acc.getBalance().compareTo(new BigDecimal("150.00")) == 0
-        ));
-        
-        // Verify logging was called
-        verify(loggingService, atLeastOnce()).logEvent(anyString(), any(), anyString(), any());
-    }
-    
-    @Test
-    void testWithdrawal_FailsWhenInsufficientFundsAndOverdraftDisabled() {
-        // Given
-        account.setBalance(new BigDecimal("100.00"));
-        account.setOverdraftEnabled(false);
-        
-        CreateTransactionRequest request = new CreateTransactionRequest();
-        request.setType("WITHDRAWAL");
-        request.setAmount(new BigDecimal("150.00"));
-        
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
-        
-        // When/Then
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
-            transactionService.createTransaction(1L, request);
-        });
-        
-        assertTrue(exception.getMessage().contains("Insufficient funds"));
-        
-        // Verify transaction was not saved
-        verify(transactionRepository, never()).save(any());
-        
-        // Verify balance was not updated
-        verify(accountRepository, never()).save(any(Account.class));
-        
-        // Verify error was logged
-        verify(loggingService).logEvent(anyString(), eq(com.bankops.portal.entity.LogEvent.LogLevel.WARN), 
-            contains("Insufficient funds"), any());
-    }
-    
-    @Test
-    void testWithdrawal_SucceedsWhenOverdraftEnabled() {
-        // Given
-        account.setBalance(new BigDecimal("100.00"));
-        account.setOverdraftEnabled(true);
-        
-        CreateTransactionRequest request = new CreateTransactionRequest();
-        request.setType("WITHDRAWAL");
-        request.setAmount(new BigDecimal("150.00"));
-        
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
-        when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
-            Transaction t = invocation.getArgument(0);
-            t.setId(100L);
-            return t;
-        });
-        when(accountRepository.save(any(Account.class))).thenReturn(account);
-        doNothing().when(loggingService).logEvent(anyString(), any(), anyString(), any());
-        doNothing().when(loggingService).logTransactionEvent(any(), any(), anyString(), any());
-        
-        // When
-        TransactionDto result = transactionService.createTransaction(1L, request);
-        
-        // Then
-        assertNotNull(result);
-        assertEquals("WITHDRAWAL", result.getType());
-        assertEquals("COMPLETED", result.getStatus());
-        
-        // Verify balance was updated (negative balance allowed with overdraft)
-        verify(accountRepository, times(1)).save(argThat(acc -> 
-            acc.getBalance().compareTo(new BigDecimal("-50.00")) == 0
-        ));
-    }
-    
-    @Test
-    void testWithdrawal_SucceedsWhenSufficientFunds() {
-        // Given
-        account.setBalance(new BigDecimal("100.00"));
-        account.setOverdraftEnabled(false);
-        
-        CreateTransactionRequest request = new CreateTransactionRequest();
-        request.setType("WITHDRAWAL");
-        request.setAmount(new BigDecimal("50.00"));
-        
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
-        when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
-            Transaction t = invocation.getArgument(0);
-            t.setId(100L);
-            return t;
-        });
-        when(accountRepository.save(any(Account.class))).thenReturn(account);
-        doNothing().when(loggingService).logEvent(anyString(), any(), anyString(), any());
-        doNothing().when(loggingService).logTransactionEvent(any(), any(), anyString(), any());
-        
-        // When
-        TransactionDto result = transactionService.createTransaction(1L, request);
-        
-        // Then
-        assertNotNull(result);
-        assertEquals("WITHDRAWAL", result.getType());
-        assertEquals("COMPLETED", result.getStatus());
-        
-        // Verify balance was updated
-        verify(accountRepository, times(1)).save(argThat(acc -> 
-            acc.getBalance().compareTo(new BigDecimal("50.00")) == 0
-        ));
-    }
-    
-    @Test
-    void testCorrelationId_IsGeneratedAndReturned() {
-        // Given
-        CreateTransactionRequest request = new CreateTransactionRequest();
-        request.setType("DEPOSIT");
-        request.setAmount(new BigDecimal("25.00"));
-        
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
-        when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
-            Transaction t = invocation.getArgument(0);
-            t.setId(100L);
-            return t;
-        });
-        when(accountRepository.save(any(Account.class))).thenReturn(account);
-        doNothing().when(loggingService).logEvent(anyString(), any(), anyString(), any());
-        doNothing().when(loggingService).logTransactionEvent(any(), any(), anyString(), any());
-        
-        // When
-        TransactionDto result = transactionService.createTransaction(1L, request);
-        
-        // Then
+        assertEquals(new BigDecimal("500.00"), result.getAmount());
+        assertEquals("Paycheck deposit", result.getDescription());
+        assertEquals("PENDING", result.getStatus());
         assertNotNull(result.getCorrelationId());
-        assertFalse(result.getCorrelationId().isEmpty());
-        // Verify it's a UUID format (36 characters with hyphens)
-        assertEquals(36, result.getCorrelationId().length());
-        assertTrue(result.getCorrelationId().contains("-"));
+
+        // Verify balance was updated
+        ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
+        verify(accountRepository, times(2)).save(accountCaptor.capture());
+        assertEquals(new BigDecimal("1500.00"), accountCaptor.getValue().getBalance());
+
+        // Verify transaction was saved
+        verify(transactionRepository).save(any(Transaction.class));
     }
-    
+
     @Test
-    void testTransaction_FailsOnClosedAccount() {
-        // Given
-        account.setStatus(Account.AccountStatus.CLOSED);
-        
+    @DisplayName("Should successfully create a withdrawal transaction with sufficient balance")
+    void testCreateWithdrawal_Success() {
+        // Arrange
+        CreateTransactionRequest request = new CreateTransactionRequest();
+        request.setType("WITHDRAWAL");
+        request.setAmount(new BigDecimal("300.00"));
+        request.setDescription("ATM withdrawal");
+        request.setCategory("OTHER");
+
+        when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
+            Transaction t = invocation.getArgument(0);
+            t.setId(2L);
+            return t;
+        });
+        when(accountRepository.save(any(Account.class))).thenReturn(testAccount);
+
+        // Act
+        TransactionDto result = transactionService.createTransaction(100L, request, null);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("WITHDRAWAL", result.getType());
+        assertEquals(new BigDecimal("300.00"), result.getAmount());
+
+        // Verify balance was updated
+        ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
+        verify(accountRepository, times(2)).save(accountCaptor.capture());
+        assertEquals(new BigDecimal("700.00"), accountCaptor.getValue().getBalance());
+    }
+
+    @Test
+    @DisplayName("Should successfully create withdrawal with overdraft enabled")
+    void testCreateWithdrawal_WithOverdraft_Success() {
+        // Arrange
+        testAccount.setOverdraftEnabled(true);
+        CreateTransactionRequest request = new CreateTransactionRequest();
+        request.setType("WITHDRAWAL");
+        request.setAmount(new BigDecimal("1200.00")); // More than balance
+        request.setCategory("OTHER");
+
+        when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
+            Transaction t = invocation.getArgument(0);
+            t.setId(3L);
+            return t;
+        });
+        when(accountRepository.save(any(Account.class))).thenReturn(testAccount);
+
+        // Act
+        TransactionDto result = transactionService.createTransaction(100L, request, null);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("WITHDRAWAL", result.getType());
+
+        // Verify balance went negative
+        ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
+        verify(accountRepository, times(2)).save(accountCaptor.capture());
+        assertEquals(new BigDecimal("-200.00"), accountCaptor.getValue().getBalance());
+    }
+
+    // ========== Validation Failure Tests ==========
+
+    @Test
+    @DisplayName("Should throw exception when account not found")
+    void testCreateTransaction_AccountNotFound() {
+        // Arrange
         CreateTransactionRequest request = new CreateTransactionRequest();
         request.setType("DEPOSIT");
+        request.setAmount(new BigDecimal("100.00"));
+
+        when(accountRepository.findById(999L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> transactionService.createTransaction(999L, request, null));
+        assertEquals("Account not found with id: 999", exception.getMessage());
+        verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when account is closed")
+    void testCreateTransaction_ClosedAccount() {
+        // Arrange
+        testAccount.setStatus(Account.AccountStatus.CLOSED);
+        CreateTransactionRequest request = new CreateTransactionRequest();
+        request.setType("DEPOSIT");
+        request.setAmount(new BigDecimal("100.00"));
+
+        when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
+
+        // Act & Assert
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> transactionService.createTransaction(100L, request, null));
+        assertEquals("Cannot process transaction on closed account", exception.getMessage());
+        verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should throw exception for invalid transaction type")
+    void testCreateTransaction_InvalidType() {
+        // Arrange
+        CreateTransactionRequest request = new CreateTransactionRequest();
+        request.setType("INVALID_TYPE");
+        request.setAmount(new BigDecimal("100.00"));
+
+        when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> transactionService.createTransaction(100L, request, null));
+        assertTrue(exception.getMessage().contains("Invalid transaction type"));
+        verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should throw exception for zero amount")
+    void testCreateTransaction_ZeroAmount() {
+        // Arrange
+        CreateTransactionRequest request = new CreateTransactionRequest();
+        request.setType("DEPOSIT");
+        request.setAmount(BigDecimal.ZERO);
+
+        when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> transactionService.createTransaction(100L, request, null));
+        assertEquals("Transaction amount must be greater than 0", exception.getMessage());
+        verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should throw exception for negative amount")
+    void testCreateTransaction_NegativeAmount() {
+        // Arrange
+        CreateTransactionRequest request = new CreateTransactionRequest();
+        request.setType("DEPOSIT");
+        request.setAmount(new BigDecimal("-50.00"));
+
+        when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> transactionService.createTransaction(100L, request, null));
+        assertEquals("Transaction amount must be greater than 0", exception.getMessage());
+        verify(transactionRepository, never()).save(any());
+    }
+
+    // ========== Edge Case Tests ==========
+
+    @Test
+    @DisplayName("Should throw exception for insufficient funds without overdraft")
+    void testCreateWithdrawal_InsufficientFunds() {
+        // Arrange
+        CreateTransactionRequest request = new CreateTransactionRequest();
+        request.setType("WITHDRAWAL");
+        request.setAmount(new BigDecimal("1500.00")); // More than balance
+        request.setCategory("OTHER");
+
+        when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
+
+        // Act & Assert
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> transactionService.createTransaction(100L, request, null));
+        assertEquals("Insufficient funds. Overdraft not enabled.", exception.getMessage());
+        verify(transactionRepository, never()).save(any());
+        verify(loggingService).logEvent(anyString(), eq(LogEvent.LogLevel.WARN), anyString(), any());
+    }
+
+    @Test
+    @DisplayName("Should handle exact balance withdrawal")
+    void testCreateWithdrawal_ExactBalance() {
+        // Arrange
+        CreateTransactionRequest request = new CreateTransactionRequest();
+        request.setType("WITHDRAWAL");
+        request.setAmount(new BigDecimal("1000.00")); // Exact balance
+        request.setCategory("OTHER");
+
+        when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
+            Transaction t = invocation.getArgument(0);
+            t.setId(4L);
+            return t;
+        });
+        when(accountRepository.save(any(Account.class))).thenReturn(testAccount);
+
+        // Act
+        TransactionDto result = transactionService.createTransaction(100L, request, null);
+
+        // Assert
+        assertNotNull(result);
+        ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
+        verify(accountRepository, times(2)).save(accountCaptor.capture());
+        assertEquals(BigDecimal.ZERO, accountCaptor.getValue().getBalance());
+    }
+
+    @Test
+    @DisplayName("Should default to OTHER category for invalid category")
+    void testCreateTransaction_InvalidCategory_DefaultsToOther() {
+        // Arrange
+        CreateTransactionRequest request = new CreateTransactionRequest();
+        request.setType("DEPOSIT");
+        request.setAmount(new BigDecimal("100.00"));
+        request.setCategory("INVALID_CATEGORY");
+
+        when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
+            Transaction t = invocation.getArgument(0);
+            t.setId(5L);
+            return t;
+        });
+        when(accountRepository.save(any(Account.class))).thenReturn(testAccount);
+
+        // Act
+        TransactionDto result = transactionService.createTransaction(100L, request, null);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("OTHER", result.getCategory());
+    }
+
+    @Test
+    @DisplayName("Should handle null category by defaulting to OTHER")
+    void testCreateTransaction_NullCategory_DefaultsToOther() {
+        // Arrange
+        CreateTransactionRequest request = new CreateTransactionRequest();
+        request.setType("DEPOSIT");
+        request.setAmount(new BigDecimal("100.00"));
+        request.setCategory(null);
+
+        when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
+            Transaction t = invocation.getArgument(0);
+            t.setId(6L);
+            return t;
+        });
+        when(accountRepository.save(any(Account.class))).thenReturn(testAccount);
+
+        // Act
+        TransactionDto result = transactionService.createTransaction(100L, request, null);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("OTHER", result.getCategory());
+    }
+
+    @Test
+    @DisplayName("Should correctly parse valid category")
+    void testCreateTransaction_ValidCategory() {
+        // Arrange
+        CreateTransactionRequest request = new CreateTransactionRequest();
+        request.setType("WITHDRAWAL");
         request.setAmount(new BigDecimal("50.00"));
-        
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
-        
-        // When/Then
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
-            transactionService.createTransaction(1L, request);
+        request.setCategory("GROCERIES");
+
+        when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
+            Transaction t = invocation.getArgument(0);
+            t.setId(7L);
+            return t;
         });
-        
-        assertTrue(exception.getMessage().contains("closed account"));
+        when(accountRepository.save(any(Account.class))).thenReturn(testAccount);
+
+        // Act
+        TransactionDto result = transactionService.createTransaction(100L, request, null);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("GROCERIES", result.getCategory());
     }
-    
+
     @Test
-    void testTransaction_FailsOnNegativeAmount() {
-        // Given
+    @DisplayName("Should handle very small decimal amounts")
+    void testCreateTransaction_SmallDecimal() {
+        // Arrange
         CreateTransactionRequest request = new CreateTransactionRequest();
         request.setType("DEPOSIT");
-        request.setAmount(new BigDecimal("-10.00"));
-        
-        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
-        
-        // When/Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            transactionService.createTransaction(1L, request);
+        request.setAmount(new BigDecimal("0.01")); // 1 cent
+        request.setCategory("OTHER");
+
+        when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
+            Transaction t = invocation.getArgument(0);
+            t.setId(8L);
+            return t;
         });
-        
-        assertTrue(exception.getMessage().contains("must be greater than 0"));
+        when(accountRepository.save(any(Account.class))).thenReturn(testAccount);
+
+        // Act
+        TransactionDto result = transactionService.createTransaction(100L, request, null);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(new BigDecimal("0.01"), result.getAmount());
     }
 }
-

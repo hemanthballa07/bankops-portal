@@ -1,0 +1,132 @@
+@import '../styles/variables';
+@import '../styles/mixins';
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+// ============================================
+// BRAND BAR
+// ============================================
+.brand-bar {
+    background: $color-bg-primary;
+    color: $color-text-primary;
+    border-bottom: $border-width solid $color-border;
+    height: $header-height;
+    z-index: $z-index-sticky;
+    box-shadow: $elevation-sm;
+
+    .sidebar-toggle {
+        margin-right: $spacing-md;
+    }
+
+    .brand-name {
+        font-size: $font-size-lg;
+        font-weight: $font-weight-semibold;
+    }
+
+    .spacer {
+        flex: 1;
+    }
+}
+
+// ============================================
+// SIDEBAR CONTAINER
+// ============================================
+.sidenav-container {
+    flex: 1;
+    height: calc(100vh - #{$header-height});
+}
+
+// ============================================
+// SIDEBAR
+// ============================================
+.sidebar {
+    width: $sidebar-width-expanded;
+    border-right: $border-width solid $color-border;
+    background: $color-bg-primary;
+    transition: width $transition-normal;
+
+    &.collapsed {
+        width: $sidebar-width-collapsed;
+
+        mat-nav-list a {
+            justify-content: center;
+            padding: 0 $spacing-md;
+
+            mat-icon {
+                margin-right: 0;
+            }
+        }
+    }
+
+    mat-nav-list {
+        padding-top: $spacing-md;
+
+        a {
+            display: flex;
+            align-items: center;
+            height: 48px;
+            padding: 0 $spacing-lg;
+            color: $color-text-secondary;
+            text-decoration: none;
+            transition: all $transition-fast;
+            position: relative;
+            border-radius: 0;
+
+            mat-icon {
+                margin-right: $spacing-md;
+                color: $color-text-secondary;
+                transition: color $transition-fast;
+            }
+
+            span {
+                font-size: $font-size-base;
+                font-weight: $font-weight-medium;
+                white-space: nowrap;
+                overflow: hidden;
+            }
+
+            &:hover {
+                background-color: $color-bg-hover;
+                color: $color-text-primary;
+
+                mat-icon {
+                    color: $color-text-primary;
+                }
+            }
+
+            &.active {
+                background-color: $color-bg-selected;
+                color: $color-info;
+                font-weight: $font-weight-semibold;
+
+                mat-icon {
+                    color: $color-info;
+                }
+
+                // Active indicator (3px left border)
+                &::before {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    bottom: 0;
+                    width: 3px;
+                    background-color: $color-info;
+                }
+            }
+        }
+    }
+}
+
+// ============================================
+// MAIN CONTENT
+// ============================================
+.main-content {
+    background: $color-bg-secondary;
+    overflow-x: hidden;
+    @include custom-scrollbar;
+}

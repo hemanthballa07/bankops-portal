@@ -1,17 +1,14 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
       let errorMessage = 'An unknown error occurred';
-      
+
       if (error.error instanceof ErrorEvent) {
-        // Client-side error
         errorMessage = `Error: ${error.error.message}`;
       } else {
-        // Server-side error
         switch (error.status) {
           case 401:
             errorMessage = 'Unauthorized. Please check your credentials.';
@@ -32,12 +29,12 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             errorMessage = error.error?.message || `Error: ${error.status} ${error.statusText}`;
         }
       }
-      
+
       console.error('HTTP Error:', errorMessage, error);
-      
-      // Re-throw the error so components can handle it
       return throwError(() => ({ ...error, userMessage: errorMessage }));
     })
   );
 };
+
+
 

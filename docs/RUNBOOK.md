@@ -65,3 +65,7 @@ If `log_events` table is missing entries but application logs show them:
 ### Monitoring
 - **Health Check**: `/actuator/health`
 - **Azure Insights**: Check App Service "Log Stream".
+
+
+
+

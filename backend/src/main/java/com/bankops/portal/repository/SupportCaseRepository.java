@@ -22,3 +22,7 @@ public interface SupportCaseRepository extends JpaRepository<SupportCase, Long> 
     List<SupportCase> findByTransactionId(Long transactionId);
 }
 
+
+
+
+

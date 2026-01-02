@@ -42,6 +42,9 @@ public class AuditEventService {
             Object newValue,
             String performedBy) {
         try {
+            System.out.println("=== AUDIT EVENT RECORDING START ===");
+            System.out.println("Entity Type: " + entityType + ", Entity ID: " + entityId + ", Action: " + action);
+
             String oldValueJson = oldValue != null ? objectMapper.writeValueAsString(oldValue) : null;
             String newValueJson = newValue != null ? objectMapper.writeValueAsString(newValue) : null;
 
@@ -55,9 +58,17 @@ public class AuditEventService {
                     .timestamp(LocalDateTime.now())
                     .build();
 
+            System.out.println("Saving audit event...");
             auditEventRepository.save(event);
+            System.out.println("=== AUDIT EVENT SAVED SUCCESSFULLY ===");
         } catch (JsonProcessingException e) {
+            System.err.println("=== AUDIT EVENT FAILED: JSON Error ===");
+            e.printStackTrace();
             throw new IllegalStateException("Failed to serialize audit event values", e);
+        } catch (Exception e) {
+            System.err.println("=== AUDIT EVENT FAILED: " + e.getMessage() + " ===");
+            e.printStackTrace();
+            throw e;
         }
     }
 

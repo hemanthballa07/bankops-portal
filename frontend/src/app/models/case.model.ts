@@ -8,6 +8,18 @@ export interface SupportCase {
   summary: string;
   createdAt: string;
   updatedAt: string;
+  assignedTo?: string;
+  notes?: CaseNote[];
+  relatedTransactionIds?: number[];
+  resolvedAt?: string;
+  resolution?: string;
+}
+
+export interface CaseNote {
+  id: number;
+  author: string;
+  content: string;
+  createdAt: string;
 }
 
 export interface CreateCaseRequest {
@@ -21,4 +33,20 @@ export interface CreateCaseRequest {
 export interface UpdateCaseRequest {
   status?: string;
 }
+
+export interface AssignCaseRequest {
+  assignedTo: string;
+}
+
+export interface AddCaseNoteRequest {
+  content: string;
+}
+
+export interface ResolveCaseRequest {
+  resolution: string;
+}
+
+
+
+
 

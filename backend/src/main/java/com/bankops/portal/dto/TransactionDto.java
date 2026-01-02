@@ -19,6 +19,10 @@ public class TransactionDto {
     private BigDecimal amount;
     private String status;
     private String correlationId;
+    private String description;
+    private String category;
     private LocalDateTime createdAt;
 }
+
+
 

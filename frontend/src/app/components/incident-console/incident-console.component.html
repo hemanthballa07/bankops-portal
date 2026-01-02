@@ -1,79 +1,334 @@
 <div class="incident-console-container">
-  <mat-card>
-    <mat-card-header>
-      <mat-card-title>Incident Console</mat-card-title>
-      <mat-card-subtitle>Search by Correlation ID</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <div class="search-section">
-        <mat-form-field appearance="outline" class="search-field">
-          <mat-label>Correlation ID</mat-label>
-          <input matInput [(ngModel)]="correlationId" (keyup.enter)="searchIncident()" placeholder="Enter correlation ID">
-          <button mat-icon-button matSuffix (click)="searchIncident()" [disabled]="loading">
-            <mat-icon>search</mat-icon>
-          </button>
-        </mat-form-field>
-        <button mat-raised-button color="primary" (click)="searchIncident()" [disabled]="loading">
-          Search
-        </button>
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Incident Console</h1>
+    <p class="helper-text">Search and investigate incidents by correlation ID or filters</p>
+  </div>
+
+  <!-- Search & Filters Row -->
+  <mat-card class="search-filters-card">
+    <div class="search-row">
+      <mat-form-field appearance="outline" class="correlation-id-field">
+        <mat-label>Correlation ID</mat-label>
+        <input matInput [(ngModel)]="filters.correlationId" placeholder="Enter correlation ID"
+          (keyup.enter)="searchIncidents()">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+
+      <button mat-raised-button color="primary" (click)="searchIncidents()" class="search-button">
+        <mat-icon>search</mat-icon>
+        Search
+      </button>
+    </div>
+
+    <div class="filters-row">
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Time Range</mat-label>
+        <mat-select [(ngModel)]="filters.timeRange" (selectionChange)="onFilterChange()">
+          <mat-option value="15m">Last 15 minutes</mat-option>
+          <mat-option value="1h">Last 1 hour</mat-option>
+          <mat-option value="24h">Last 24 hours</mat-option>
+          <mat-option value="7d">Last 7 days</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Status</mat-label>
+        <mat-select [(ngModel)]="filters.status" (selectionChange)="onFilterChange()">
+          <mat-option value="all">All</mat-option>
+          <mat-option value="2xx">2xx (Success)</mat-option>
+          <mat-option value="4xx">4xx (Client Error)</mat-option>
+          <mat-option value="5xx">5xx (Server Error)</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Service</mat-label>
+        <mat-select [(ngModel)]="filters.service" (selectionChange)="onFilterChange()">
+          <mat-option *ngFor="let service of services" [value]="service">
+            {{ service === 'all' ? 'All Services' : service }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Severity</mat-label>
+        <mat-select [(ngModel)]="filters.severity" (selectionChange)="onFilterChange()">
+          <mat-option value="all">All</mat-option>
+          <mat-option value="SEV1">SEV1 (Critical)</mat-option>
+          <mat-option value="SEV2">SEV2 (High)</mat-option>
+          <mat-option value="SEV3">SEV3 (Medium)</mat-option>
+          <mat-option value="SEV4">SEV4 (Low)</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </mat-card>
+
+  <!-- KPI Cards -->
+  <div class="kpi-cards-row">
+    <mat-card class="kpi-card">
+      <div class="kpi-icon open-incidents">
+        <mat-icon>error_outline</mat-icon>
       </div>
-
-      <div *ngIf="loading" class="loading">
-        <p>Loading incident details...</p>
+      <div class="kpi-content">
+        <div class="kpi-value">{{ kpis.openIncidents }}</div>
+        <div class="kpi-label">Open Incidents</div>
       </div>
+    </mat-card>
 
-      <div *ngIf="error" class="error">
-        <p>{{ error }}</p>
+    <mat-card class="kpi-card">
+      <div class="kpi-icon failed-requests">
+        <mat-icon>warning</mat-icon>
       </div>
-
-      <div *ngIf="incident && !loading" class="incident-details">
-        <div class="transaction-section" *ngIf="incident.transaction">
-          <h3>Transaction</h3>
-          <mat-card>
-            <mat-card-content>
-              <p><strong>ID:</strong> {{ incident.transaction.id }}</p>
-              <p><strong>Type:</strong> {{ incident.transaction.type }}</p>
-              <p><strong>Amount:</strong> ${{ incident.transaction.amount | number:'1.2-2' }}</p>
-              <p><strong>Status:</strong> {{ incident.transaction.status }}</p>
-              <p><strong>Created:</strong> {{ incident.transaction.createdAt | date:'short' }}</p>
-            </mat-card-content>
-          </mat-card>
-        </div>
-
-        <div class="case-section" *ngIf="incident.case_">
-          <h3>Related Case</h3>
-          <mat-card>
-            <mat-card-content>
-              <p><strong>ID:</strong> {{ incident.case_.id }}</p>
-              <p><strong>Status:</strong> {{ incident.case_.status }}</p>
-              <p><strong>Severity:</strong> {{ incident.case_.severity }}</p>
-              <p><strong>Summary:</strong> {{ incident.case_.summary }}</p>
-            </mat-card-content>
-          </mat-card>
-        </div>
-
-        <div class="log-events-section">
-          <h3>Log Events Timeline</h3>
-          <mat-card>
-            <mat-card-content>
-              <mat-list>
-                <mat-list-item *ngFor="let log of incident.logEvents" class="log-item">
-                  <div class="log-content">
-                    <div class="log-header">
-                      <mat-chip [class]="getLogLevelClass(log.level)">{{ log.level }}</mat-chip>
-                      <span class="log-time">{{ log.createdAt | date:'short' }}</span>
-                    </div>
-                    <p class="log-message">{{ log.message }}</p>
-                    <pre *ngIf="log.contextJson" class="log-context">{{ log.contextJson | json }}</pre>
-                  </div>
-                </mat-list-item>
-              </mat-list>
-              <p *ngIf="incident.logEvents.length === 0" class="no-logs">No log events found</p>
-            </mat-card-content>
-          </mat-card>
-        </div>
+      <div class="kpi-content">
+        <div class="kpi-value">{{ kpis.failedRequests }}</div>
+        <div class="kpi-label">Failed Requests (1h)</div>
       </div>
-    </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-icon latency">
+        <mat-icon>speed</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <div class="kpi-value">{{ kpis.p95Latency }}ms</div>
+        <div class="kpi-label">p95 Latency</div>
+      </div>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <div class="kpi-icon active-cases">
+        <mat-icon>assignment</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <div class="kpi-value">{{ kpis.activeCases }}</div>
+        <div class="kpi-label">Active Cases</div>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Results Table -->
+  <mat-card class="results-card">
+    <div class="results-header">
+      <h2>Incidents</h2>
+      <span class="results-count">{{ totalElements }} total</span>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-state">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Loading incidents...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="error-state">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ error }}</p>
+      <button mat-raised-button color="primary" (click)="loadIncidents()">Retry</button>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading && !error && incidents.length === 0" class="empty-state">
+      <mat-icon>search_off</mat-icon>
+      <p>No incidents found</p>
+      <p class="empty-hint">Try adjusting your search filters</p>
+    </div>
+
+    <!-- Table -->
+    <div *ngIf="!loading && !error && incidents.length > 0" class="table-container">
+      <table mat-table [dataSource]="incidents" class="incidents-table">
+        <!-- Timestamp Column -->
+        <ng-container matColumnDef="timestamp">
+          <th mat-header-cell *matHeaderCellDef>Timestamp</th>
+          <td mat-cell *matCellDef="let incident">
+            {{ incident.timestamp | date:'short' }}
+          </td>
+        </ng-container>
+
+        <!-- Service Column -->
+        <ng-container matColumnDef="service">
+          <th mat-header-cell *matHeaderCellDef>Service</th>
+          <td mat-cell *matCellDef="let incident">
+            <span class="service-name">{{ incident.service }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Endpoint Column -->
+        <ng-container matColumnDef="endpoint">
+          <th mat-header-cell *matHeaderCellDef>Endpoint</th>
+          <td mat-cell *matCellDef="let incident">
+            <code class="endpoint-code">{{ incident.endpoint }}</code>
+          </td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let incident">
+            <mat-chip [ngClass]="getStatusClass(incident.status)" class="status-chip">
+              {{ incident.status }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <!-- Latency Column -->
+        <ng-container matColumnDef="latency">
+          <th mat-header-cell *matHeaderCellDef>Latency</th>
+          <td mat-cell *matCellDef="let incident">
+            {{ incident.latency | number:'1.0-0' }}ms
+          </td>
+        </ng-container>
+
+        <!-- Correlation ID Column -->
+        <ng-container matColumnDef="correlationId">
+          <th mat-header-cell *matHeaderCellDef>Correlation ID</th>
+          <td mat-cell *matCellDef="let incident">
+            <code class="correlation-id">{{ incident.correlationId }}</code>
+          </td>
+        </ng-container>
+
+        <!-- Actor Column -->
+        <ng-container matColumnDef="actor">
+          <th mat-header-cell *matHeaderCellDef>Actor</th>
+          <td mat-cell *matCellDef="let incident">
+            {{ incident.actor }}
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="incident-row"
+          (click)="viewIncidentDetail(row)"></tr>
+      </table>
+
+      <mat-paginator [length]="totalElements" [pageSize]="pageSize" [pageSizeOptions]="[10, 20, 50, 100]"
+        (page)="onPageChange($event)" showFirstLastButtons>
+      </mat-paginator>
+    </div>
   </mat-card>
 </div>
 
+<!-- Detail Drawer -->
+<mat-drawer-container class="detail-drawer-container" [hasBackdrop]="true">
+  <mat-drawer #drawer mode="over" position="end" [opened]="drawerOpen" (closed)="closeDrawer()" class="detail-drawer">
+    <div *ngIf="selectedIncident" class="drawer-content">
+      <!-- Drawer Header -->
+      <div class="drawer-header">
+        <div class="header-top">
+          <h2>Incident Detail</h2>
+          <button mat-icon-button (click)="closeDrawer()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="header-meta">
+          <mat-chip [color]="getSeverityColor(selectedIncident.severity)" selected>
+            {{ selectedIncident.severity }}
+          </mat-chip>
+          <mat-chip [ngClass]="getStatusClass(selectedIncident.status)" class="status-chip">
+            {{ selectedIncident.statusText }}
+          </mat-chip>
+          <span class="timestamp">{{ selectedIncident.timestamp | date:'medium' }}</span>
+        </div>
+      </div>
+
+      <!-- Drawer Tabs -->
+      <mat-tab-group class="drawer-tabs">
+        <!-- Overview Tab -->
+        <mat-tab label="Overview">
+          <div class="tab-content">
+            <div class="detail-section">
+              <h3>Request Details</h3>
+              <div class="detail-grid">
+                <div class="detail-item">
+                  <span class="label">Service:</span>
+                  <span class="value">{{ selectedIncident.service }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Endpoint:</span>
+                  <code class="value">{{ selectedIncident.endpoint }}</code>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Status:</span>
+                  <span class="value">{{ selectedIncident.status }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Latency:</span>
+                  <span class="value">{{ selectedIncident.latency | number:'1.0-0' }}ms</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Correlation ID:</span>
+                  <code class="value">{{ selectedIncident.correlationId }}</code>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Actor:</span>
+                  <span class="value">{{ selectedIncident.actor }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Logs Tab -->
+        <mat-tab label="Logs">
+          <div class="tab-content">
+            <div *ngIf="incidentDetail && incidentDetail.logEvents && incidentDetail.logEvents.length > 0"
+              class="logs-list">
+              <div *ngFor="let log of incidentDetail.logEvents" class="log-entry"
+                [ngClass]="getLogLevelClass(log.level)">
+                <div class="log-header">
+                  <mat-chip class="log-level-chip">{{ log.level }}</mat-chip>
+                  <span class="log-timestamp">{{ log.createdAt | date:'medium' }}</span>
+                </div>
+                <div class="log-message">{{ log.message }}</div>
+                <div *ngIf="log.contextJson" class="log-context">
+                  <pre>{{ log.contextJson }}</pre>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="!incidentDetail || !incidentDetail.logEvents || incidentDetail.logEvents.length === 0"
+              class="empty-state">
+              <mat-icon>description</mat-icon>
+              <p>No logs available</p>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Related Requests Tab -->
+        <mat-tab label="Related">
+          <div class="tab-content">
+            <div class="empty-state">
+              <mat-icon>link</mat-icon>
+              <p>No related requests found</p>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Audit Timeline Tab -->
+        <mat-tab label="Audit Timeline">
+          <div class="tab-content">
+            <div class="empty-state">
+              <mat-icon>history</mat-icon>
+              <p>Audit timeline integration coming soon</p>
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+
+      <!-- Action Buttons -->
+      <div class="drawer-actions">
+        <button mat-raised-button color="primary">
+          <mat-icon>add</mat-icon>
+          Create Case
+        </button>
+        <button mat-raised-button>
+          <mat-icon>person_add</mat-icon>
+          Assign
+        </button>
+        <button mat-raised-button>
+          <mat-icon>file_download</mat-icon>
+          Export
+        </button>
+      </div>
+    </div>
+  </mat-drawer>
+</mat-drawer-container>

@@ -1,0 +1,32 @@
+<div class="page-header">
+    <!-- Breadcrumbs -->
+    <nav class="breadcrumbs" *ngIf="breadcrumbs && breadcrumbs.length > 0">
+        <a *ngFor="let crumb of breadcrumbs; let last = last" [routerLink]="crumb.route" [class.active]="last">
+            {{ crumb.label }}
+            <mat-icon *ngIf="!last">chevron_right</mat-icon>
+        </a>
+    </nav>
+
+    <!-- Header Content -->
+    <div class="header-content">
+        <div class="header-text">
+            <h1>{{ title }}</h1>
+            <p *ngIf="subtitle" class="subtitle">{{ subtitle }}</p>
+        </div>
+
+        <div class="header-actions" *ngIf="primaryAction || (secondaryActions && secondaryActions.length > 0)">
+            <!-- Secondary Actions -->
+            <button *ngFor="let action of secondaryActions" mat-button (click)="action.handler()">
+                <mat-icon *ngIf="action.icon">{{ action.icon }}</mat-icon>
+                {{ action.label }}
+            </button>
+
+            <!-- Primary Action -->
+            <button *ngIf="primaryAction" mat-raised-button [color]="primaryAction.color || 'primary'"
+                (click)="primaryAction.handler()">
+                <mat-icon *ngIf="primaryAction.icon">{{ primaryAction.icon }}</mat-icon>
+                {{ primaryAction.label }}
+            </button>
+        </div>
+    </div>
+</div>

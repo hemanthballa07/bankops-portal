@@ -1,7 +1,14 @@
 .cases-container {
   padding: 20px;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 20px;
+}
+
+mat-card {
+  height: fit-content;
 }
 
 .filters {
@@ -21,6 +28,11 @@
   padding: 20px;
   border-radius: 4px;
   margin-bottom: 20px;
+
+  mat-form-field {
+    width: 100%;
+    margin-bottom: 8px;
+  }
 }
 
 .form-actions {
@@ -33,9 +45,127 @@
 .cases-table {
   width: 100%;
   margin-top: 20px;
+
+  mat-chip {
+    font-size: 11px;
+    min-height: 24px;
+    padding: 4px 8px;
+  }
+
+  .status-open {
+    background-color: #2196F3;
+    color: white;
+  }
+
+  .status-investigating {
+    background-color: #FF9800;
+    color: white;
+  }
+
+  .status-resolved {
+    background-color: #4CAF50;
+    color: white;
+  }
+
+  .severity-low {
+    background-color: #9E9E9E;
+    color: white;
+  }
+
+  .severity-medium {
+    background-color: #FF9800;
+    color: white;
+  }
+
+  .severity-high {
+    background-color: #F44336;
+    color: white;
+  }
+
+  .severity-critical {
+    background-color: #9C27B0;
+    color: white;
+  }
+
+  .unassigned {
+    color: #999;
+    font-style: italic;
+  }
 }
 
-.status-select {
-  width: 150px;
+.case-details {
+  position: sticky;
+  top: 20px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+
+  mat-card-header {
+    position: relative;
+
+    .close-button {
+      position: absolute;
+      right: 0;
+      top: 0;
+    }
+  }
+
+  .detail-section {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e0e0e0;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    h3 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      color: #333;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    p {
+      margin: 8px 0;
+      line-height: 1.5;
+
+      strong {
+        color: #666;
+        margin-right: 8px;
+      }
+    }
+  }
+
+  .note-panel {
+    margin-bottom: 8px;
+
+    mat-panel-title {
+      font-size: 13px;
+      color: #666;
+    }
+
+    p {
+      margin: 0;
+      padding: 8px 0;
+    }
+  }
+
+  .full-width {
+    width: 100%;
+    margin-bottom: 12px;
+  }
 }
 
+// Single column layout for smaller screens
+@media (max-width: 1200px) {
+  .cases-container {
+    grid-template-columns: 1fr;
+  }
+
+  .case-details {
+    position: relative;
+    top: 0;
+    max-height: none;
+  }
+}

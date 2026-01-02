@@ -20,3 +20,7 @@ public class LogEventDto {
     private LocalDateTime createdAt;
 }
 
+
+
+
+
