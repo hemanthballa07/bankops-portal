@@ -8,6 +8,11 @@
     <mat-card-header>
       <mat-card-title>Account {{ account.id }}</mat-card-title>
       <mat-card-subtitle>{{ account.type }} - {{ account.status }}</mat-card-subtitle>
+      <button mat-raised-button color="accent" [routerLink]="['/audit', 'ACCOUNT', account.id]"
+        style="margin-left: auto;">
+        <mat-icon>history</mat-icon>
+        View Audit Timeline
+      </button>
     </mat-card-header>
     <mat-card-content>
       <div class="account-details">
@@ -47,6 +52,23 @@
             <mat-label>Amount</mat-label>
             <input matInput type="number" [(ngModel)]="newTransaction.amount" min="0.01" step="0.01" required>
           </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Description (Optional)</mat-label>
+            <input matInput [(ngModel)]="newTransaction.description" placeholder="e.g., Coffee purchase">
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Category</mat-label>
+            <mat-select [(ngModel)]="newTransaction.category">
+              <mat-option value="GROCERIES">Groceries</mat-option>
+              <mat-option value="DINING">Dining</mat-option>
+              <mat-option value="TRANSPORTATION">Transportation</mat-option>
+              <mat-option value="UTILITIES">Utilities</mat-option>
+              <mat-option value="ENTERTAINMENT">Entertainment</mat-option>
+              <mat-option value="HEALTHCARE">Healthcare</mat-option>
+              <mat-option value="SHOPPING">Shopping</mat-option>
+              <mat-option value="OTHER">Other</mat-option>
+            </mat-select>
+          </mat-form-field>
         </div>
         <div class="form-actions">
           <button mat-raised-button color="primary" (click)="onCreateTransaction()">Submit</button>
@@ -54,45 +76,86 @@
         </div>
       </div>
 
-      <table mat-table [dataSource]="transactions" class="transactions-table">
-        <ng-container matColumnDef="id">
-          <th mat-header-cell *matHeaderCellDef>ID</th>
-          <td mat-cell *matCellDef="let transaction">{{ transaction.id }}</td>
-        </ng-container>
+      <!-- Spending Summary -->
+      <app-spending-summary *ngIf="account" [accountId]="account.id" [startDate]="filterStartDate"
+        [endDate]="filterEndDate">
+      </app-spending-summary>
 
-        <ng-container matColumnDef="type">
-          <th mat-header-cell *matHeaderCellDef>Type</th>
-          <td mat-cell *matCellDef="let transaction">{{ transaction.type }}</td>
-        </ng-container>
+      <!-- Monthly Spending Chart -->
+      <app-monthly-chart *ngIf="account" [accountId]="account.id" [startDate]="filterStartDate"
+        [endDate]="filterEndDate">
+      </app-monthly-chart>
 
-        <ng-container matColumnDef="amount">
-          <th mat-header-cell *matHeaderCellDef>Amount</th>
-          <td mat-cell *matCellDef="let transaction">${{ transaction.amount | number:'1.2-2' }}</td>
-        </ng-container>
+      <!-- Filter Component -->
+      <app-transaction-filter (filterChange)="onFilterChange($event)"></app-transaction-filter>
 
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef>Status</th>
-          <td mat-cell *matCellDef="let transaction">{{ transaction.status }}</td>
-        </ng-container>
+      <!-- Loading Spinner -->
+      <div *ngIf="loading" class="loading-container">
+        <mat-spinner></mat-spinner>
+      </div>
 
-        <ng-container matColumnDef="correlationId">
-          <th mat-header-cell *matHeaderCellDef>Correlation ID</th>
-          <td mat-cell *matCellDef="let transaction">
-            <button mat-button (click)="viewIncident(transaction.correlationId)" class="correlation-link">
-              {{ transaction.correlationId }}
-            </button>
-          </td>
-        </ng-container>
+      <!-- Transactions Table -->
+      <div *ngIf="!loading">
+        <div *ngIf="transactions.length === 0" class="empty-state">
+          <mat-icon>inbox</mat-icon>
+          <p>No transactions found</p>
+          <p class="hint">Try adjusting your filters or create a new transaction</p>
+        </div>
 
-        <ng-container matColumnDef="createdAt">
-          <th mat-header-cell *matHeaderCellDef>Date</th>
-          <td mat-cell *matCellDef="let transaction">{{ transaction.createdAt | date:'short' }}</td>
-        </ng-container>
+        <table mat-table [dataSource]="transactions" class="transactions-table" *ngIf="transactions.length > 0">
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef>ID</th>
+            <td mat-cell *matCellDef="let transaction">{{ transaction.id }}</td>
+          </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-      </table>
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef>Type</th>
+            <td mat-cell *matCellDef="let transaction">{{ transaction.type }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="amount">
+            <th mat-header-cell *matHeaderCellDef>Amount</th>
+            <td mat-cell *matCellDef="let transaction">${{ transaction.amount | number:'1.2-2' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let transaction">
+              <span [class]="'status-badge status-' + transaction.status.toLowerCase()">
+                {{ transaction.status }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>Description</th>
+            <td mat-cell *matCellDef="let transaction">{{ transaction.description || '-' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="correlationId">
+            <th mat-header-cell *matHeaderCellDef>Correlation ID</th>
+            <td mat-cell *matCellDef="let transaction">
+              <button mat-button (click)="viewIncident(transaction.correlationId)" class="correlation-link">
+                {{ transaction.correlationId }}
+              </button>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef>Date</th>
+            <td mat-cell *matCellDef="let transaction">{{ transaction.createdAt | date:'short' }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+
+        <!-- Pagination -->
+        <mat-paginator *ngIf="transactions.length > 0" [length]="totalElements" [pageSize]="pageSize"
+          [pageIndex]="pageIndex" [pageSizeOptions]="[10, 20, 50, 100]" (page)="onPageChange($event)"
+          showFirstLastButtons>
+        </mat-paginator>
+      </div>
     </mat-card-content>
   </mat-card>
 </div>
-

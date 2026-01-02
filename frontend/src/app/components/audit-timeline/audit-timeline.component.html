@@ -1,0 +1,63 @@
+<div class="audit-timeline-container">
+    <h2>Audit Timeline - {{ entityType }} #{{ entityId }}</h2>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-container">
+        <mat-spinner></mat-spinner>
+        <p>Loading audit events...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="error-container">
+        <mat-icon color="warn">error</mat-icon>
+        <p>{{ error }}</p>
+        <button mat-raised-button color="primary" (click)="loadAuditEvents()">
+            Retry
+        </button>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading && !error && auditEvents.length === 0" class="empty-container">
+        <mat-icon>history</mat-icon>
+        <p>No audit events found for this {{ entityType.toLowerCase() }}.</p>
+    </div>
+
+    <!-- Timeline -->
+    <div *ngIf="!loading && !error && auditEvents.length > 0" class="timeline">
+        <mat-card *ngFor="let event of auditEvents" class="timeline-event">
+            <mat-card-header>
+                <div class="event-header">
+                    <mat-chip [color]="getActionColor(event.action)" selected>
+                        {{ event.action }}
+                    </mat-chip>
+                    <span class="timestamp">{{ formatTimestamp(event.timestamp) }}</span>
+                </div>
+            </mat-card-header>
+
+            <mat-card-content>
+                <div class="event-details">
+                    <div class="detail-row">
+                        <strong>Performed By:</strong> {{ event.performedBy }}
+                    </div>
+
+                    <div class="detail-row" *ngIf="getChangedFields(event).length > 0">
+                        <strong>Changes:</strong>
+                        <div class="changes-list">
+                            <div *ngFor="let field of getChangedFields(event)" class="field-change">
+                                <span class="field-name">{{ field }}:</span>
+                                <span class="old-value">{{ getFieldChange(event, field).old }}</span>
+                                <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+                                <span class="new-value">{{ getFieldChange(event, field).new }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </mat-card-content>
+        </mat-card>
+    </div>
+
+    <!-- Pagination -->
+    <mat-paginator *ngIf="!loading && !error && auditEvents.length > 0" [length]="totalElements" [pageSize]="size"
+        [pageIndex]="page" [pageSizeOptions]="[10, 20, 50]" (page)="onPageChange($event)" showFirstLastButtons>
+    </mat-paginator>
+</div>

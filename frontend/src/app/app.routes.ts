@@ -29,5 +29,9 @@ export const routes: Routes = [
   {
     path: 'incidents/:correlationId',
     loadComponent: () => import('./components/incident-console/incident-console.component').then(m => m.IncidentConsoleComponent)
+  },
+  {
+    path: 'audit/:entityType/:entityId',
+    loadComponent: () => import('./components/audit-timeline/audit-timeline.component').then(m => m.AuditTimelineComponent)
   }
 ];
