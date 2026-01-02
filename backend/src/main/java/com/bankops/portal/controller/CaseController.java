@@ -20,6 +20,7 @@ public class CaseController {
 
     private final CaseService caseService;
     private final com.bankops.portal.assignment.AssignmentService assignmentService;
+    private final com.bankops.portal.timeline.TimelineService timelineService;
 
     @PostMapping
     public ResponseEntity<SupportCaseDto> createCase(@Valid @RequestBody CreateCaseRequest request) {
@@ -61,7 +62,6 @@ public class CaseController {
         SupportCaseDto supportCase = caseService.updateCaseStatus(id, request);
         return ResponseEntity.ok(supportCase);
     }
-
 
     @PostMapping("/{id}/notes")
     public ResponseEntity<CaseNoteDto> addCaseNote(
@@ -152,5 +152,36 @@ public class CaseController {
                 .currentActiveCount(agent.getCurrentActiveCount())
                 .skills(skills)
                 .build();
+    }
+
+    @GetMapping("/{id}/timeline")
+    public ResponseEntity<java.util.List<com.bankops.portal.dto.CaseTimelineEventDto>> getTimeline(
+            @PathVariable Long id,
+            @RequestParam(required = false) String eventType,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime to,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+
+        com.bankops.portal.timeline.TimelineFilter filter = com.bankops.portal.timeline.TimelineFilter.builder()
+                .eventType(eventType != null ? com.bankops.portal.dto.CaseTimelineEventDto.EventType.valueOf(eventType)
+                        : null)
+                .fromTimestamp(from)
+                .toTimestamp(to)
+                .page(page)
+                .pageSize(size)
+                .build();
+
+        java.util.List<com.bankops.portal.dto.CaseTimelineEventDto> timeline = timelineService.getTimeline(id, filter);
+        return ResponseEntity.ok(timeline);
+    }
+
+    @GetMapping("/{id}/replay")
+    public ResponseEntity<com.bankops.portal.dto.CaseSnapshotDto> replayAt(
+            @PathVariable Long id,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime at) {
+
+        com.bankops.portal.dto.CaseSnapshotDto snapshot = timelineService.replayAt(id, at);
+        return ResponseEntity.ok(snapshot);
     }
 }
