@@ -17,7 +17,9 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatTabsModule } from '@angular/material/tabs';
+
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { CaseService } from '../../services/case.service';
 import { CustomerService } from '../../services/customer.service';
@@ -25,6 +27,7 @@ import { SupportCase, CreateCaseRequest, UpdateCaseRequest, AddCaseNoteRequest, 
 import { Customer } from '../../models/customer.model';
 import { PageHeaderComponent } from '../shared/page-header/page-header.component';
 import { CaseQueueHeaderComponent, QueueKPIs } from './case-queue-header/case-queue-header.component';
+import { CaseTimelineComponent } from '../case-timeline/case-timeline.component';
 
 interface EnhancedCase extends SupportCase {
   selected?: boolean;
@@ -56,6 +59,7 @@ interface EnhancedCase extends SupportCase {
     MatPaginatorModule,
     MatTabsModule,
     MatTooltipModule,
+    MatProgressSpinnerModule,
     PageHeaderComponent,
     CaseQueueHeaderComponent
   ],
@@ -195,6 +199,15 @@ export class CasesComponent implements OnInit {
 
   assignToMe(caseId: number): void {
     this.caseService.assignCase(caseId, { assignedTo: 'admin' }).subscribe(() => this.loadCases());
+  }
+
+  openTimeline(caseId: number): void {
+    this.dialog.open(CaseTimelineComponent, {
+      width: '650px',
+      maxHeight: '90vh',
+      data: { caseId },
+      panelClass: 'timeline-dialog'
+    });
   }
 
   selectCase(c: EnhancedCase): void {

@@ -148,6 +148,9 @@
               <button mat-icon-button [matMenuTriggerFor]="menu">
                 <mat-icon>more_vert</mat-icon>
               </button>
+              <button mat-icon-button color="accent" (click)="openTimeline(case.id)" matTooltip="View Timeline">
+                <mat-icon>history</mat-icon>
+              </button>
               <mat-menu #menu="matMenu">
                 <button mat-menu-item (click)="updateStatus(case.id, 'OPEN')">Mark Open</button>
                 <button mat-menu-item (click)="updateStatus(case.id, 'IN_PROGRESS')">Mark In Progress</button>

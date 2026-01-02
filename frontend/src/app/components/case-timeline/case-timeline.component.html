@@ -1,0 +1,121 @@
+<div class="timeline-container">
+    <div class="timeline-header">
+        <h2>Case Timeline #{{ caseId }}</h2>
+        <button mat-icon-button (click)="close()">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+
+    <div class="timeline-filters">
+        <mat-form-field appearance="outline">
+            <mat-label>Event Type</mat-label>
+            <mat-select [(ngModel)]="selectedEventType" (selectionChange)="filterByEventType()">
+                <mat-option *ngFor="let type of eventTypes" [value]="type">
+                    {{ type }}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+    </div>
+
+    <div class="timeline-content" *ngIf="!loading || timeline.length > 0">
+        <div class="timeline-events">
+            <div *ngFor="let event of filteredTimeline" class="timeline-event">
+                <div class="event-header">
+                    <span class="event-badge" [ngClass]="getEventTypeBadgeClass(event.eventType)">
+                        {{ event.eventType }}
+                    </span>
+                    <span class="event-time" [title]="formatTimestamp(event.timestamp)">
+                        {{ formatRelativeTime(event.timestamp) }}
+                    </span>
+                </div>
+
+                <div class="event-summary">{{ event.summary }}</div>
+
+                <div class="event-meta">
+                    <span class="event-actor">by {{ event.actor }}</span>
+                    <span class="event-correlation" *ngIf="event.correlationId">
+                        ID: {{ event.correlationId.substring(0, 8) }}
+                    </span>
+                </div>
+
+                <div class="event-actions">
+                    <button mat-button (click)="toggleDetails(event.id)">
+                        {{ expandedEventId === event.id ? 'Hide' : 'Show' }} Details
+                    </button>
+                    <button mat-raised-button color="primary" (click)="replayAt(event)">
+                        Replay
+                    </button>
+                </div>
+
+                <div class="event-details" *ngIf="expandedEventId === event.id">
+                    <pre>{{ event.details | json }}</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="timeline-pagination" *ngIf="hasMore">
+            <button mat-raised-button (click)="loadMore()" [disabled]="loading">
+                Load More
+            </button>
+        </div>
+    </div>
+
+    <div class="timeline-loading" *ngIf="loading && timeline.length === 0">
+        <mat-spinner></mat-spinner>
+        <p>Loading timeline...</p>
+    </div>
+
+    <div class="timeline-error" *ngIf="error">
+        <mat-icon>error</mat-icon>
+        <p>{{ error }}</p>
+    </div>
+
+    <!-- Replay Snapshot Panel -->
+    <div class="replay-panel" *ngIf="replaySnapshot">
+        <div class="replay-header">
+            <h3>Snapshot at {{ formatTimestamp(replaySnapshot.snapshotAt) }}</h3>
+            <button mat-icon-button (click)="closeReplay()">
+                <mat-icon>close</mat-icon>
+            </button>
+        </div>
+
+        <div class="replay-content">
+            <div class="snapshot-field">
+                <label>State:</label>
+                <span>{{ replaySnapshot.state }}</span>
+            </div>
+
+            <div class="snapshot-field" *ngIf="replaySnapshot.assigneeName">
+                <label>Assignee:</label>
+                <span>{{ replaySnapshot.assigneeName }} (ID: {{ replaySnapshot.assigneeId }})</span>
+            </div>
+
+            <div class="snapshot-field" *ngIf="!replaySnapshot.assigneeName">
+                <label>Assignee:</label>
+                <span class="unassigned">Unassigned</span>
+            </div>
+
+            <div class="snapshot-field" *ngIf="replaySnapshot.slaStatus">
+                <label>SLA Status:</label>
+                <span [class.sla-breached]="replaySnapshot.slaStatus === 'BREACHED'"
+                    [class.sla-at-risk]="replaySnapshot.slaStatus === 'AT_RISK'">
+                    {{ replaySnapshot.slaStatus }}
+                </span>
+            </div>
+
+            <div class="snapshot-field" *ngIf="replaySnapshot.severity">
+                <label>Severity:</label>
+                <span>{{ replaySnapshot.severity }}</span>
+            </div>
+
+            <div class="snapshot-field" *ngIf="replaySnapshot.createdAt">
+                <label>Created:</label>
+                <span>{{ formatTimestamp(replaySnapshot.createdAt) }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="replay-loading" *ngIf="replayLoading">
+        <mat-spinner diameter="30"></mat-spinner>
+    </div>
+</div>
