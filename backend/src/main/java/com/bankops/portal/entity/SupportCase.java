@@ -1,5 +1,6 @@
 package com.bankops.portal.entity;
 
+import com.bankops.portal.statemachine.CaseState;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,7 +38,7 @@ public class SupportCase {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private CaseStatus status = CaseStatus.OPEN;
+    private CaseState state = CaseState.NEW;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -56,6 +57,9 @@ public class SupportCase {
     @Column(name = "assigned_to")
     private String assignedTo;
 
+    @Column(name = "correlation_id", length = 100)
+    private String correlationId;
+
     @OneToMany(mappedBy = "supportCase", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<CaseNote> notes = new ArrayList<>();
@@ -71,6 +75,10 @@ public class SupportCase {
     @Column(length = 2000)
     private String resolution;
 
+    /**
+     * @deprecated Use CaseState enum instead
+     */
+    @Deprecated
     public enum CaseStatus {
         OPEN, INVESTIGATING, RESOLVED
     }

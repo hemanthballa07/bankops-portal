@@ -23,6 +23,7 @@ public class SupportCaseDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String assignedTo;
+    private String correlationId;
     private List<CaseNoteDto> notes;
     private List<Long> relatedTransactionIds;
     private LocalDateTime resolvedAt;

@@ -1,0 +1,71 @@
+<div class="queue-header">
+    <!-- Top Bar: Saved Views & View Actions -->
+    <div class="views-bar">
+        <div class="view-tabs">
+            <div *ngFor="let view of savedViews" class="view-tab" [class.active]="activeViewId === view.id"
+                (click)="selectView(view.id)">
+                <span class="view-name">{{ view.name }}</span>
+                <span class="view-count" *ngIf="view.count">{{ view.count }}</span>
+            </div>
+            <button mat-icon-button class="add-view-btn">
+                <mat-icon>add</mat-icon>
+            </button>
+        </div>
+
+        <div class="actions">
+            <button mat-stroked-button color="primary">
+                <mat-icon>filter_list</mat-icon> Filters
+            </button>
+            <button mat-stroked-button>
+                <mat-icon>sort</mat-icon> Sort
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+        <mat-card class="kpi-card">
+            <div class="kpi-label">Open Cases</div>
+            <div class="kpi-value-row">
+                <span class="kpi-value">{{ kpis.openCases }}</span>
+                <span class="kpi-trend" [class.positive]="kpis.openTrend > 0" [class.negative]="kpis.openTrend < 0">
+                    <mat-icon>{{ kpis.openTrend > 0 ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+                    {{ kpis.openTrend }}%
+                </span>
+            </div>
+        </mat-card>
+
+        <mat-card class="kpi-card warning" [class.active]="activeViewId === 'unassigned'">
+            <div class="kpi-label">Unassigned</div>
+            <div class="kpi-value">{{ kpis.unassigned }}</div>
+        </mat-card>
+
+        <mat-card class="kpi-card danger" [class.active]="activeViewId === 'sla-risk'">
+            <div class="kpi-label">SLA at Risk</div>
+            <div class="kpi-value">{{ kpis.slaAtRisk }}</div>
+        </mat-card>
+
+        <mat-card class="kpi-card" [class.active]="activeViewId === 'high-sev'">
+            <div class="kpi-label">High Severity</div>
+            <div class="kpi-value">{{ kpis.highSeverity }}</div>
+        </mat-card>
+    </div>
+
+    <!-- Bulk Actions Bar (conditionally shown) -->
+    <div class="bulk-actions" *ngIf="selectedCount > 0">
+        <div class="selection-info">
+            <span class="count">{{ selectedCount }}</span> selected
+        </div>
+        <div class="action-buttons">
+            <button mat-stroked-button (click)="onBulkAction('assign')">
+                <mat-icon>person_add</mat-icon> Assign
+            </button>
+            <button mat-stroked-button (click)="onBulkAction('status')">
+                <mat-icon>update</mat-icon> Set Status
+            </button>
+            <button mat-stroked-button color="warn" (click)="onBulkAction('delete')">
+                <mat-icon>delete</mat-icon> Delete
+            </button>
+        </div>
+    </div>
+</div>

@@ -1,49 +1,26 @@
-<div class="cases-container">
-  <mat-card>
-    <mat-card-header>
-      <mat-card-title>Support Cases</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <div class="filters">
-        <mat-form-field appearance="outline">
-          <mat-label>Status</mat-label>
-          <mat-select [(ngModel)]="statusFilter" (selectionChange)="onFilter()">
-            <mat-option value="">All</mat-option>
-            <mat-option value="OPEN">Open</mat-option>
-            <mat-option value="INVESTIGATING">Investigating</mat-option>
-            <mat-option value="RESOLVED">Resolved</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Severity</mat-label>
-          <mat-select [(ngModel)]="severityFilter" (selectionChange)="onFilter()">
-            <mat-option value="">All</mat-option>
-            <mat-option value="LOW">Low</mat-option>
-            <mat-option value="MEDIUM">Medium</mat-option>
-            <mat-option value="HIGH">High</mat-option>
-            <mat-option value="CRITICAL">Critical</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <button mat-raised-button color="primary" (click)="toggleCreateForm()">
-          <mat-icon>add</mat-icon>
-          Create Case
-        </button>
-      </div>
+<app-page-header title="Support Cases" subtitle="Manage and resolve customer issues"
+  [primaryAction]="{ label: 'Create Case', icon: 'add', handler: toggleCreateForm.bind(this) }">
+</app-page-header>
 
-      <div *ngIf="showCreateForm" class="create-form">
-        <h3>Create New Case</h3>
+<div class="cases-layout">
+  <div class="cases-main">
+    <!-- Queue Header with KPIs -->
+    <app-case-queue-header [kpis]="queueKpis" [selectedCount]="getSelectedCount()">
+    </app-case-queue-header>
+
+    <!-- Create Case Form (Inline for now) -->
+    <mat-card *ngIf="showCreateForm" class="create-case-card">
+      <h3>Create New Case</h3>
+      <div class="form-row">
         <mat-form-field appearance="outline">
           <mat-label>Customer</mat-label>
-          <mat-select [(ngModel)]="newCase.customerId" required>
+          <mat-select [(ngModel)]="newCase.customerId">
             <mat-option *ngFor="let customer of customers" [value]="customer.id">
-              {{ customer.firstName }} {{ customer.lastName }} ({{ customer.email }})
+              {{customer.firstName}} {{customer.lastName}} ({{customer.email}})
             </mat-option>
           </mat-select>
         </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Summary</mat-label>
-          <textarea matInput [(ngModel)]="newCase.summary" rows="3" required></textarea>
-        </mat-form-field>
+
         <mat-form-field appearance="outline">
           <mat-label>Severity</mat-label>
           <mat-select [(ngModel)]="newCase.severity">
@@ -53,140 +30,246 @@
             <mat-option value="CRITICAL">Critical</mat-option>
           </mat-select>
         </mat-form-field>
-        <div class="form-actions">
-          <button mat-raised-button color="primary" (click)="onCreateCase()">Create</button>
-          <button mat-button (click)="toggleCreateForm()">Cancel</button>
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Summary</mat-label>
+        <textarea matInput [(ngModel)]="newCase.summary" rows="3"></textarea>
+      </mat-form-field>
+
+      <div class="form-actions">
+        <button mat-button (click)="toggleCreateForm()">Cancel</button>
+        <button mat-raised-button color="primary" (click)="onCreateCase()">Create</button>
+      </div>
+    </mat-card>
+
+    <!-- Cases Table -->
+    <div class="table-container">
+      <table mat-table [dataSource]="dataSource" matSort class="dense-table hover-table">
+
+        <!-- Checkbox Column -->
+        <ng-container matColumnDef="select">
+          <th mat-header-cell *matHeaderCellDef>
+            <mat-checkbox (change)="$event ? toggleAll($event) : null"
+              [checked]="dataSource.data.length > 0 && isAllSelected()"
+              [indeterminate]="getSelectedCount() > 0 && !isAllSelected()">
+            </mat-checkbox>
+          </th>
+          <td mat-cell *matCellDef="let row">
+            <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? row.selected = !row.selected : null"
+              [checked]="row.selected">
+            </mat-checkbox>
+          </td>
+        </ng-container>
+
+        <!-- ID Column -->
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
+          <td mat-cell *matCellDef="let case">{{case.id}}</td>
+        </ng-container>
+
+        <!-- Customer Column -->
+        <ng-container matColumnDef="customer">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Customer</th>
+          <td mat-cell *matCellDef="let case">
+            <a [routerLink]="['/customers', case.customerId]" class="customer-link">
+              {{case.customerName}}
+            </a>
+          </td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+          <td mat-cell *matCellDef="let case">
+            <mat-chip [class]="'status-' + case.status.toLowerCase()">
+              {{case.status}}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <!-- Severity Column -->
+        <ng-container matColumnDef="severity">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Severity</th>
+          <td mat-cell *matCellDef="let case">
+            <span [class]="'severity-tag ' + case.severity.toLowerCase()">
+              {{case.severity}}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Priority Column -->
+        <ng-container matColumnDef="priority">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Priority</th>
+          <td mat-cell *matCellDef="let case">
+            <span class="priority-badge p{{case.priority}}">P{{case.priority}}</span>
+          </td>
+        </ng-container>
+
+        <!-- SLA Column -->
+        <ng-container matColumnDef="sla">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>SLA</th>
+          <td mat-cell *matCellDef="let case">
+            <span class="sla-chip" [class.warning]="case.slaRemaining < 4" [class.critical]="case.slaRemaining < 0">
+              {{case.slaRemaining > 0 ? case.slaRemaining + 'h' : 'BREACHED'}}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Summary Column -->
+        <ng-container matColumnDef="summary">
+          <th mat-header-cell *matHeaderCellDef>Summary</th>
+          <td mat-cell *matCellDef="let case" class="truncate-cell" [matTooltip]="case.summary">
+            {{case.summary}}
+          </td>
+        </ng-container>
+
+        <!-- Assigned To Column -->
+        <ng-container matColumnDef="assignedTo">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Assigned To</th>
+          <td mat-cell *matCellDef="let case">
+            <div class="assignee" *ngIf="case.assignedTo">
+              <mat-icon class="avatar-icon">account_circle</mat-icon>
+              {{case.assignedTo}}
+            </div>
+            <span class="unassigned" *ngIf="!case.assignedTo">Unassigned</span>
+          </td>
+        </ng-container>
+
+        <!-- Quick Actions Column -->
+        <ng-container matColumnDef="quickActions">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let case" (click)="$event.stopPropagation()">
+            <div class="quick-actions">
+              <button mat-icon-button color="primary" *ngIf="!case.assignedTo" (click)="assignToMe(case.id)"
+                matTooltip="Assign to Me">
+                <mat-icon>person_add</mat-icon>
+              </button>
+              <button mat-icon-button [matMenuTriggerFor]="menu">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menu="matMenu">
+                <button mat-menu-item (click)="updateStatus(case.id, 'OPEN')">Mark Open</button>
+                <button mat-menu-item (click)="updateStatus(case.id, 'IN_PROGRESS')">Mark In Progress</button>
+                <button mat-menu-item (click)="updateStatus(case.id, 'RESOLVED')">Mark Resolved</button>
+              </mat-menu>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="selectCase(row)"
+          [class.selected-row]="selectedCase?.id === row.id"></tr>
+      </table>
+      <mat-paginator [pageSizeOptions]="[10, 20, 50]" showFirstLastButtons></mat-paginator>
+    </div>
+  </div>
+
+  <!-- Case Details Drawer -->
+  <div class="case-details-drawer" [class.open]="selectedCase">
+    <div class="drawer-header" *ngIf="selectedCase">
+      <div class="drawer-title">
+        <h2>Case #{{selectedCase.id}}</h2>
+        <span class="status-badge" [class]="'status-' + selectedCase.status.toLowerCase()">
+          {{selectedCase.status}}
+        </span>
+      </div>
+      <button mat-icon-button (click)="closeDetails()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="drawer-content" *ngIf="selectedCase">
+      <div class="drawer-summary-card">
+        <p class="summary-text">{{selectedCase.summary}}</p>
+        <div class="meta-row">
+          <span class="meta-item">
+            <mat-icon>calendar_today</mat-icon> {{selectedCase.createdAt | date:'short'}}
+          </span>
+          <span class="meta-item">
+            <mat-icon>person</mat-icon> {{selectedCase.customerName}}
+          </span>
         </div>
       </div>
 
-      <table mat-table [dataSource]="cases" class="cases-table">
-        <ng-container matColumnDef="id">
-          <th mat-header-cell *matHeaderCellDef>ID</th>
-          <td mat-cell *matCellDef="let case_">{{ case_.id }}</td>
-        </ng-container>
+      <mat-tab-group>
+        <!-- Notes Tab -->
+        <mat-tab label="Notes">
+          <div class="notes-section">
+            <div class="add-note">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Add internal note...</mat-label>
+                <textarea matInput [(ngModel)]="newNote" rows="2"></textarea>
+                <button mat-icon-button matSuffix color="primary" (click)="addNote()" [disabled]="!newNote">
+                  <mat-icon>send</mat-icon>
+                </button>
+              </mat-form-field>
+            </div>
 
-        <ng-container matColumnDef="customerId">
-          <th mat-header-cell *matHeaderCellDef>Customer ID</th>
-          <td mat-cell *matCellDef="let case_">{{ case_.customerId }}</td>
-        </ng-container>
+            <div class="notes-list">
+              <div class="note-item" *ngFor="let note of selectedCase.notes">
+                <div class="note-header">
+                  <span class="author">{{note.author}}</span>
+                  <span class="time">{{note.createdAt | date:'short'}}</span>
+                </div>
+                <div class="note-content">{{note.content}}</div>
+              </div>
+              <div class="empty-state" *ngIf="!selectedCase.notes?.length">
+                No notes yet.
+              </div>
+            </div>
+          </div>
+        </mat-tab>
 
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef>Status</th>
-          <td mat-cell *matCellDef="let case_">
-            <mat-chip [class.status-open]="case_.status === 'OPEN'"
-              [class.status-investigating]="case_.status === 'INVESTIGATING'"
-              [class.status-resolved]="case_.status === 'RESOLVED'">
-              {{ case_.status }}
-            </mat-chip>
-          </td>
-        </ng-container>
+        <!-- Overview Tab -->
+        <mat-tab label="Overview">
+          <div class="details-list">
+            <div class="detail-item">
+              <label>Customer</label>
+              <span>{{selectedCase.customerName}}</span>
+            </div>
+            <div class="detail-item">
+              <label>Account</label>
+              <span>N/A</span> <!-- Needs account info -->
+            </div>
+            <div class="detail-item">
+              <label>Transaction</label>
+              <span>N/A</span>
+            </div>
+            <div class="detail-item">
+              <label>SLA Remaining</label>
+              <span [class.text-danger]="(selectedCase || {}).slaRemaining! < 0">
+                {{(selectedCase || {}).slaRemaining}}h
+              </span>
+            </div>
+          </div>
+        </mat-tab>
 
-        <ng-container matColumnDef="severity">
-          <th mat-header-cell *matHeaderCellDef>Severity</th>
-          <td mat-cell *matCellDef="let case_">
-            <mat-chip [class.severity-low]="case_.severity === 'LOW'"
-              [class.severity-medium]="case_.severity === 'MEDIUM'" [class.severity-high]="case_.severity === 'HIGH'"
-              [class.severity-critical]="case_.severity === 'CRITICAL'">
-              {{ case_.severity }}
-            </mat-chip>
-          </td>
-        </ng-container>
+        <!-- Resolution Tab -->
+        <mat-tab label="Resolution">
+          <div class="resolution-section">
+            <div *ngIf="selectedCase.status === 'RESOLVED'" class="resolved-info">
+              <mat-icon color="primary">check_circle</mat-icon>
+              <div class="resolution-text">
+                <strong>Resolution:</strong>
+                <p>{{selectedCase.resolution || 'No resolution text recorded.'}}</p>
+                <small>Resolved on {{selectedCase.resolvedAt | date:'medium'}}</small>
+              </div>
+            </div>
 
-        <ng-container matColumnDef="summary">
-          <th mat-header-cell *matHeaderCellDef>Summary</th>
-          <td mat-cell *matCellDef="let case_">{{ case_.summary }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="assignedTo">
-          <th mat-header-cell *matHeaderCellDef>Assigned To</th>
-          <td mat-cell *matCellDef="let case_">
-            <span *ngIf="case_.assignedTo">{{ case_.assignedTo }}</span>
-            <span *ngIf="!case_.assignedTo" class="unassigned">Unassigned</span>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="createdAt">
-          <th mat-header-cell *matHeaderCellDef>Created</th>
-          <td mat-cell *matCellDef="let case_">{{ case_.createdAt | date:'short' }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef>Actions</th>
-          <td mat-cell *matCellDef="let case_">
-            <button mat-icon-button (click)="selectCase(case_)" matTooltip="View Details">
-              <mat-icon>visibility</mat-icon>
-            </button>
-            <button mat-icon-button (click)="assignToMe(case_)" *ngIf="!case_.assignedTo && case_.status !== 'RESOLVED'"
-              matTooltip="Assign to Me">
-              <mat-icon>person_add</mat-icon>
-            </button>
-          </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-      </table>
-    </mat-card-content>
-  </mat-card>
-
-  <!-- Case Details Panel -->
-  <mat-card *ngIf="selectedCase" class="case-details">
-    <mat-card-header>
-      <mat-card-title>
-        Case #{{ selectedCase.id }} Details
-        <button mat-icon-button (click)="closeDetails()" class="close-button">
-          <mat-icon>close</mat-icon>
-        </button>
-      </mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <div class="detail-section">
-        <h3>Information</h3>
-        <p><strong>Customer ID:</strong> {{ selectedCase.customerId }}</p>
-        <p><strong>Status:</strong> {{ selectedCase.status }}</p>
-        <p><strong>Severity:</strong> {{ selectedCase.severity }}</p>
-        <p><strong>Assigned To:</strong> {{ selectedCase.assignedTo || 'Unassigned' }}</p>
-        <p><strong>Summary:</strong> {{ selectedCase.summary }}</p>
-        <p><strong>Created:</strong> {{ selectedCase.createdAt | date:'medium' }}</p>
-        <p *ngIf="selectedCase.resolvedAt"><strong>Resolved:</strong> {{ selectedCase.resolvedAt | date:'medium' }}</p>
-        <p *ngIf="selectedCase.resolution"><strong>Resolution:</strong> {{ selectedCase.resolution }}</p>
-      </div>
-
-      <div class="detail-section" *ngIf="selectedCase.notes && selectedCase.notes.length > 0">
-        <h3>Notes ({{ selectedCase.notes.length }})</h3>
-        <mat-expansion-panel *ngFor="let note of selectedCase.notes" class="note-panel">
-          <mat-expansion-panel-header>
-            <mat-panel-title>
-              {{ note.author }} - {{ note.createdAt | date:'short' }}
-            </mat-panel-title>
-          </mat-expansion-panel-header>
-          <p>{{ note.content }}</p>
-        </mat-expansion-panel>
-      </div>
-
-      <div class="detail-section" *ngIf="selectedCase.status !== 'RESOLVED'">
-        <h3>Add Note</h3>
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Note Content</mat-label>
-          <textarea matInput [(ngModel)]="newNote" rows="3" placeholder="Enter note..."></textarea>
-        </mat-form-field>
-        <button mat-raised-button color="primary" (click)="addNote()" [disabled]="!newNote.trim()">
-          <mat-icon>add_comment</mat-icon>
-          Add Note
-        </button>
-      </div>
-
-      <div class="detail-section" *ngIf="selectedCase.status !== 'RESOLVED'">
-        <h3>Resolve Case</h3>
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Resolution</mat-label>
-          <textarea matInput [(ngModel)]="resolution" rows="3" placeholder="Enter resolution..."></textarea>
-        </mat-form-field>
-        <button mat-raised-button color="accent" (click)="resolveCase()" [disabled]="!resolution.trim()">
-          <mat-icon>check_circle</mat-icon>
-          Resolve Case
-        </button>
-      </div>
-    </mat-card-content>
-  </mat-card>
+            <div *ngIf="selectedCase.status !== 'RESOLVED'" class="resolve-form">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Resolution details...</mat-label>
+                <textarea matInput [(ngModel)]="resolution" rows="4"></textarea>
+              </mat-form-field>
+              <button mat-raised-button color="primary" class="full-width" (click)="resolveCase()"
+                [disabled]="!resolution">
+                Resolve Case
+              </button>
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+  </div>
 </div>

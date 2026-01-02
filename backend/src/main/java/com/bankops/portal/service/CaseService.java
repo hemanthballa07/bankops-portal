@@ -9,6 +9,8 @@ import com.bankops.portal.dto.AssignCaseRequest;
 import com.bankops.portal.dto.ResolveCaseRequest;
 import com.bankops.portal.entity.*;
 import com.bankops.portal.repository.*;
+import com.bankops.portal.statemachine.CaseState;
+import com.bankops.portal.statemachine.CaseStateMachine;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,7 @@ public class CaseService {
     private final TransactionRepository transactionRepository;
     private final CaseNoteRepository caseNoteRepository;
     private final AuditEventService auditEventService;
+    private final CaseStateMachine stateMachine;
 
     @Transactional
     public SupportCaseDto createCase(CreateCaseRequest request) {
@@ -56,21 +59,24 @@ public class CaseService {
             }
         }
 
+        String correlationId = stateMachine.generateCorrelationId();
+
         SupportCase supportCase = SupportCase.builder()
                 .customer(customer)
                 .account(account)
                 .transaction(transaction)
-                .status(SupportCase.CaseStatus.OPEN)
+                .state(CaseState.NEW)
                 .severity(severity)
                 .summary(request.getSummary())
+                .correlationId(correlationId)
                 .build();
 
         supportCase = caseRepository.save(supportCase);
         return toDto(supportCase);
     }
 
-    public List<SupportCaseDto> getCases(SupportCase.CaseStatus status, SupportCase.CaseSeverity severity) {
-        List<SupportCase> cases = caseRepository.findByStatusAndSeverity(status, severity);
+    public List<SupportCaseDto> getCases(CaseState state, SupportCase.CaseSeverity severity) {
+        List<SupportCase> cases = caseRepository.findByStateAndSeverity(state, severity);
         return cases.stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
@@ -81,62 +87,28 @@ public class CaseService {
         SupportCase supportCase = caseRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Case not found with id: " + id));
 
-        SupportCase.CaseStatus oldStatus = supportCase.getStatus();
+        CaseState oldState = supportCase.getState();
 
         if (request.getStatus() != null) {
-            SupportCase.CaseStatus newStatus;
+            CaseState newState;
             try {
-                newStatus = SupportCase.CaseStatus.valueOf(request.getStatus().toUpperCase());
+                newState = CaseState.valueOf(request.getStatus().toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid case status: " + request.getStatus());
+                throw new IllegalArgumentException("Invalid case state: " + request.getStatus());
             }
 
-            // Validate status transition
-            validateStatusTransition(supportCase.getStatus(), newStatus);
-            supportCase.setStatus(newStatus);
+            // Use state machine to execute transition
+            CaseState resultState = stateMachine.executeTransitionToState(
+                    supportCase, newState, "SYSTEM",
+                    supportCase.getCorrelationId(), "Status update via API");
+            supportCase.setState(resultState);
         }
 
         supportCase = caseRepository.save(supportCase);
-
-        // Record audit event if status changed
-        if (request.getStatus() != null && !oldStatus.equals(supportCase.getStatus())) {
-            java.util.Map<String, Object> auditOldValue = new java.util.HashMap<>();
-            auditOldValue.put("status", oldStatus.name());
-            java.util.Map<String, Object> auditNewValue = new java.util.HashMap<>();
-            auditNewValue.put("status", supportCase.getStatus().name());
-            auditEventService.recordEvent(
-                    com.bankops.portal.entity.AuditEvent.EntityType.CASE,
-                    id,
-                    com.bankops.portal.entity.AuditEvent.Action.STATUS_CHANGE,
-                    auditOldValue,
-                    auditNewValue,
-                    "SYSTEM");
-        }
-
         return toDto(supportCase);
     }
 
-    private void validateStatusTransition(SupportCase.CaseStatus currentStatus, SupportCase.CaseStatus newStatus) {
-        // Valid transitions: OPEN -> INVESTIGATING -> RESOLVED
-        // Also allow: OPEN -> RESOLVED (quick resolution)
-        if (currentStatus == newStatus) {
-            return; // No change
-        }
-
-        if (currentStatus == SupportCase.CaseStatus.OPEN) {
-            if (newStatus == SupportCase.CaseStatus.INVESTIGATING || newStatus == SupportCase.CaseStatus.RESOLVED) {
-                return; // Valid
-            }
-        } else if (currentStatus == SupportCase.CaseStatus.INVESTIGATING) {
-            if (newStatus == SupportCase.CaseStatus.RESOLVED) {
-                return; // Valid
-            }
-        } else if (currentStatus == SupportCase.CaseStatus.RESOLVED) {
-            throw new IllegalStateException("Cannot change status from RESOLVED");
-        }
-
-        throw new IllegalStateException("Invalid status transition from " + currentStatus + " to " + newStatus);
-    }
+    // Removed: validation now handled by CaseStateMachine
 
     private SupportCaseDto toDto(SupportCase supportCase) {
         return SupportCaseDto.builder()
@@ -144,12 +116,13 @@ public class CaseService {
                 .customerId(supportCase.getCustomer().getId())
                 .accountId(supportCase.getAccount() != null ? supportCase.getAccount().getId() : null)
                 .transactionId(supportCase.getTransaction() != null ? supportCase.getTransaction().getId() : null)
-                .status(supportCase.getStatus().name())
+                .status(supportCase.getState().name())
                 .severity(supportCase.getSeverity().name())
                 .summary(supportCase.getSummary())
                 .createdAt(supportCase.getCreatedAt())
                 .updatedAt(supportCase.getUpdatedAt())
                 .assignedTo(supportCase.getAssignedTo())
+                .correlationId(supportCase.getCorrelationId())
                 .notes(supportCase.getNotes().stream()
                         .map(this::toCaseNoteDto)
                         .collect(Collectors.toList()))
@@ -257,26 +230,21 @@ public class CaseService {
         SupportCase supportCase = caseRepository.findById(caseId)
                 .orElseThrow(() -> new IllegalArgumentException("Case not found with id: " + caseId));
 
-        if (supportCase.getStatus() == SupportCase.CaseStatus.RESOLVED) {
-            throw new IllegalStateException("Case is already resolved");
+        if (supportCase.getState() == CaseState.RESOLVED || supportCase.getState() == CaseState.CLOSED) {
+            throw new IllegalStateException("Case is already resolved or closed");
         }
 
-        supportCase.setStatus(SupportCase.CaseStatus.RESOLVED);
-        supportCase.setResolvedAt(java.time.LocalDateTime.now());
+        // Set resolution before transition (required for validation)
         supportCase.setResolution(request.getResolution());
-        supportCase = caseRepository.save(supportCase);
 
-        // Record audit event
-        java.util.Map<String, Object> auditNewValue = new java.util.HashMap<>();
-        auditNewValue.put("status", "RESOLVED");
-        auditNewValue.put("resolution", request.getResolution());
-        auditEventService.recordEvent(
-                AuditEvent.EntityType.CASE,
-                caseId,
-                AuditEvent.Action.STATUS_CHANGE,
-                null,
-                auditNewValue,
-                "SYSTEM");
+        // Use state machine to transition to RESOLVED
+        CaseState newState = stateMachine.executeTransitionToState(
+                supportCase, CaseState.RESOLVED, "SYSTEM",
+                supportCase.getCorrelationId(), "Case resolved: " + request.getResolution());
+
+        supportCase.setState(newState);
+        supportCase.setResolvedAt(java.time.LocalDateTime.now());
+        supportCase = caseRepository.save(supportCase);
 
         return toDto(supportCase);
     }
