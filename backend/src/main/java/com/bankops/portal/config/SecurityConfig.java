@@ -19,65 +19,73 @@ import org.springframework.web.cors.CorsConfigurationSource;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-    
-    private final CorsConfigurationSource corsConfigurationSource;
-    
-    public SecurityConfig(CorsConfigurationSource corsConfigurationSource) {
-        this.corsConfigurationSource = corsConfigurationSource;
-    }
-    
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource))
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/health", "/actuator/health").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/api/customers/**").hasAnyRole("USER", "SUPPORT")
-                .requestMatchers("/api/accounts/**").hasAnyRole("USER", "SUPPORT")
-                .requestMatchers("/api/accounts/**/transactions/**").hasAnyRole("USER", "SUPPORT")
-                .requestMatchers("/api/cases/**").hasRole("SUPPORT")
-                .requestMatchers("/api/incidents/**").hasRole("SUPPORT")
-                .anyRequest().authenticated()
-            )
-            .httpBasic(httpBasic -> {})
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .headers(headers -> headers
-                .frameOptions(frameOptions -> frameOptions.disable()) // For H2 console
-            );
-        
-        return http.build();
-    }
-    
-    @Bean
-    public UserDetailsService userDetailsService() {
-        // In production, these should come from environment variables or database
-        String userUsername = System.getenv().getOrDefault("APP_USER_USERNAME", "user");
-        String userPassword = System.getenv().getOrDefault("APP_USER_PASSWORD", "password");
-        String supportUsername = System.getenv().getOrDefault("APP_SUPPORT_USERNAME", "support");
-        String supportPassword = System.getenv().getOrDefault("APP_SUPPORT_PASSWORD", "password");
-        
-        UserDetails user = User.builder()
-                .username(userUsername)
-                .password(passwordEncoder().encode(userPassword))
-                .roles("USER")
-                .build();
-        
-        UserDetails support = User.builder()
-                .username(supportUsername)
-                .password(passwordEncoder().encode(supportPassword))
-                .roles("USER", "SUPPORT")
-                .build();
-        
-        return new InMemoryUserDetailsManager(user, support);
-    }
-    
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-}
 
+        private final CorsConfigurationSource corsConfigurationSource;
+
+        public SecurityConfig(CorsConfigurationSource corsConfigurationSource) {
+                this.corsConfigurationSource = corsConfigurationSource;
+        }
+
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+                http
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                                .csrf(csrf -> csrf.disable())
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers("/health").permitAll()
+                                                .requestMatchers("/whoami").permitAll() // Controller handles 401 logic
+                                                .requestMatchers("/actuator/**").permitAll()
+                                                .requestMatchers("/h2-console/**").permitAll()
+                                                .requestMatchers("/customers/**").hasAnyRole("USER", "SUPPORT")
+                                                .requestMatchers("/accounts/**").hasAnyRole("USER", "SUPPORT")
+                                                .requestMatchers("/cases/**").hasRole("SUPPORT")
+                                                .requestMatchers("/incidents/**").hasRole("SUPPORT")
+                                                .requestMatchers("/audit/**").hasAnyRole("ADMIN", "SUPPORT")
+                                                .anyRequest().authenticated())
+                                .httpBasic(httpBasic -> {
+                                })
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .headers(headers -> headers
+                                                .frameOptions(frameOptions -> frameOptions.disable()) // For H2 console
+                                );
+
+                return http.build();
+        }
+
+        @Bean
+        public UserDetailsService userDetailsService() {
+                // In production, these should come from environment variables or database
+                String userUsername = System.getenv().getOrDefault("APP_USER_USERNAME", "user");
+                String userPassword = System.getenv().getOrDefault("APP_USER_PASSWORD", "password");
+                String supportUsername = System.getenv().getOrDefault("APP_SUPPORT_USERNAME", "support");
+                String supportPassword = System.getenv().getOrDefault("APP_SUPPORT_PASSWORD", "password");
+                String adminUsername = System.getenv().getOrDefault("APP_ADMIN_USERNAME", "admin");
+                String adminPassword = System.getenv().getOrDefault("APP_ADMIN_PASSWORD", "password");
+
+                UserDetails user = User.builder()
+                                .username(userUsername)
+                                .password(passwordEncoder().encode(userPassword))
+                                .roles("USER")
+                                .build();
+
+                UserDetails support = User.builder()
+                                .username(supportUsername)
+                                .password(passwordEncoder().encode(supportPassword))
+                                .roles("USER", "SUPPORT")
+                                .build();
+
+                UserDetails admin = User.builder()
+                                .username(adminUsername)
+                                .password(passwordEncoder().encode(adminPassword))
+                                .roles("USER", "SUPPORT", "ADMIN")
+                                .build();
+
+                return new InMemoryUserDetailsManager(user, support, admin);
+        }
+
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
+}
