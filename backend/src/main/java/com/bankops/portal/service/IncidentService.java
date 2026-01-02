@@ -19,16 +19,16 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class IncidentService {
-    
+
     private final TransactionRepository transactionRepository;
     private final SupportCaseRepository caseRepository;
     private final LogEventRepository logEventRepository;
-    
+
     public IncidentResponse getIncidentByCorrelationId(String correlationId) {
         // Find transaction
         Transaction transaction = transactionRepository.findByCorrelationId(correlationId)
                 .orElse(null);
-        
+
         TransactionDto transactionDto = null;
         if (transaction != null) {
             transactionDto = TransactionDto.builder()
@@ -41,7 +41,7 @@ public class IncidentService {
                     .createdAt(transaction.getCreatedAt())
                     .build();
         }
-        
+
         // Find related case
         SupportCaseDto caseDto = null;
         if (transaction != null) {
@@ -52,8 +52,9 @@ public class IncidentService {
                         .id(supportCase.getId())
                         .customerId(supportCase.getCustomer().getId())
                         .accountId(supportCase.getAccount() != null ? supportCase.getAccount().getId() : null)
-                        .transactionId(supportCase.getTransaction() != null ? supportCase.getTransaction().getId() : null)
-                        .status(supportCase.getStatus().name())
+                        .transactionId(
+                                supportCase.getTransaction() != null ? supportCase.getTransaction().getId() : null)
+                        .status(supportCase.getState().name())
                         .severity(supportCase.getSeverity().name())
                         .summary(supportCase.getSummary())
                         .createdAt(supportCase.getCreatedAt())
@@ -61,13 +62,13 @@ public class IncidentService {
                         .build();
             }
         }
-        
+
         // Find log events
         List<LogEvent> logEvents = logEventRepository.findByCorrelationIdOrderByCreatedAtAsc(correlationId);
         List<LogEventDto> logEventDtos = logEvents.stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
-        
+
         return IncidentResponse.builder()
                 .correlationId(correlationId)
                 .transaction(transactionDto)
@@ -75,7 +76,7 @@ public class IncidentService {
                 .logEvents(logEventDtos)
                 .build();
     }
-    
+
     private LogEventDto toDto(LogEvent logEvent) {
         return LogEventDto.builder()
                 .id(logEvent.getId())
@@ -87,8 +88,3 @@ public class IncidentService {
                 .build();
     }
 }
-
-
-
-
-

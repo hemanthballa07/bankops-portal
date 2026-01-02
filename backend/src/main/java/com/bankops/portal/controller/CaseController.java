@@ -3,6 +3,7 @@ package com.bankops.portal.controller;
 import com.bankops.portal.dto.*;
 import com.bankops.portal.entity.SupportCase;
 import com.bankops.portal.service.CaseService;
+import com.bankops.portal.statemachine.CaseState;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,15 +28,15 @@ public class CaseController {
 
     @GetMapping
     public ResponseEntity<List<SupportCaseDto>> getCases(
-            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String state,
             @RequestParam(required = false) String severity) {
 
-        SupportCase.CaseStatus caseStatus = null;
-        if (status != null) {
+        CaseState caseState = null;
+        if (state != null) {
             try {
-                caseStatus = SupportCase.CaseStatus.valueOf(status.toUpperCase());
+                caseState = CaseState.valueOf(state.toUpperCase());
             } catch (IllegalArgumentException e) {
-                // Invalid status, will be handled by service
+                // Invalid state, will be handled by service
             }
         }
 
@@ -48,7 +49,7 @@ public class CaseController {
             }
         }
 
-        List<SupportCaseDto> cases = caseService.getCases(caseStatus, caseSeverity);
+        List<SupportCaseDto> cases = caseService.getCases(caseState, caseSeverity);
         return ResponseEntity.ok(cases);
     }
 
@@ -92,5 +93,11 @@ public class CaseController {
             @Valid @RequestBody ResolveCaseRequest request) {
         SupportCaseDto supportCase = caseService.resolveCase(id, request);
         return ResponseEntity.ok(supportCase);
+    }
+
+    @GetMapping("/{id}/transitions")
+    public ResponseEntity<CaseTransitionsDto> getAllowedTransitions(@PathVariable Long id) {
+        CaseTransitionsDto transitions = caseService.getAllowedTransitions(id);
+        return ResponseEntity.ok(transitions);
     }
 }
