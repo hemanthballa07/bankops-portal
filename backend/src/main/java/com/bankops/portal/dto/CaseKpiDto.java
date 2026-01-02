@@ -17,4 +17,5 @@ public class CaseKpiDto {
     private int unassignedCases;
     private int slaAtRiskCases;
     private int highSeverityCases;
+    private int unassignedHighSeverity;
 }
