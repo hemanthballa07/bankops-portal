@@ -25,4 +25,9 @@ public interface SupportCaseRepository extends JpaRepository<SupportCase, Long> 
          * Find all cases in any of the specified states (for SLA scheduler)
          */
         List<SupportCase> findByStateIn(List<CaseState> states);
+
+        /**
+         * Count active cases for an agent (for assignment load tracking)
+         */
+        long countByAssigneeIdAndStateIn(Long assigneeId, List<CaseState> states);
 }

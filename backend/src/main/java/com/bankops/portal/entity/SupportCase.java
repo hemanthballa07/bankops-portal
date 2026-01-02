@@ -59,6 +59,13 @@ public class SupportCase {
     @Column(name = "assigned_to")
     private String assignedTo;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assignee_id")
+    private Agent assignee;
+
+    @Column(name = "assigned_at")
+    private LocalDateTime assignedAt;
+
     @Column(name = "correlation_id", length = 100)
     private String correlationId;
 

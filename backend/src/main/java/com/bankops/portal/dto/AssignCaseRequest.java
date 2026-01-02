@@ -12,6 +12,5 @@ import lombok.NoArgsConstructor;
 @Builder
 public class AssignCaseRequest {
 
-    @NotBlank(message = "Assignee is required")
-    private String assignedTo;
+    private Long agentId;
 }

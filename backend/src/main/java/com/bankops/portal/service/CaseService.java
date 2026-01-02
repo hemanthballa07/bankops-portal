@@ -172,30 +172,6 @@ public class CaseService {
                                 .build();
         }
 
-        @Transactional
-        public SupportCaseDto assignCase(Long caseId, AssignCaseRequest request) {
-                SupportCase supportCase = caseRepository.findById(caseId)
-                                .orElseThrow(() -> new IllegalArgumentException("Case not found with id: " + caseId));
-
-                String oldAssignee = supportCase.getAssignedTo();
-                supportCase.setAssignedTo(request.getAssignedTo());
-                supportCase = caseRepository.save(supportCase);
-
-                // Record audit event
-                java.util.Map<String, Object> auditOldValue = new java.util.HashMap<>();
-                auditOldValue.put("assignedTo", oldAssignee);
-                java.util.Map<String, Object> auditNewValue = new java.util.HashMap<>();
-                auditNewValue.put("assignedTo", request.getAssignedTo());
-                auditEventService.recordEvent(
-                                AuditEvent.EntityType.CASE,
-                                caseId,
-                                AuditEvent.Action.UPDATE,
-                                auditOldValue,
-                                auditNewValue,
-                                request.getAssignedTo());
-
-                return toDto(supportCase);
-        }
 
         @Transactional
         public CaseNoteDto addCaseNote(Long caseId, AddCaseNoteRequest request, String author) {

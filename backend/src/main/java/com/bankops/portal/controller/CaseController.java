@@ -19,6 +19,7 @@ import java.util.List;
 public class CaseController {
 
     private final CaseService caseService;
+    private final com.bankops.portal.assignment.AssignmentService assignmentService;
 
     @PostMapping
     public ResponseEntity<SupportCaseDto> createCase(@Valid @RequestBody CreateCaseRequest request) {
@@ -61,13 +62,6 @@ public class CaseController {
         return ResponseEntity.ok(supportCase);
     }
 
-    @PutMapping("/{id}/assign")
-    public ResponseEntity<SupportCaseDto> assignCase(
-            @PathVariable Long id,
-            @Valid @RequestBody AssignCaseRequest request) {
-        SupportCaseDto supportCase = caseService.assignCase(id, request);
-        return ResponseEntity.ok(supportCase);
-    }
 
     @PostMapping("/{id}/notes")
     public ResponseEntity<CaseNoteDto> addCaseNote(
@@ -100,9 +94,63 @@ public class CaseController {
         CaseTransitionsDto transitions = caseService.getAllowedTransitions(id);
         return ResponseEntity.ok(transitions);
     }
+
     @GetMapping("/kpis")
     public ResponseEntity<com.bankops.portal.dto.CaseKpiDto> getKpis() {
         com.bankops.portal.dto.CaseKpiDto kpis = caseService.getKpis();
         return ResponseEntity.ok(kpis);
-}
     }
+
+    @PostMapping("/{id}/assign")
+    public ResponseEntity<com.bankops.portal.dto.AssignmentResultDto> assignCase(
+            @PathVariable Long id,
+            @RequestBody com.bankops.portal.dto.AssignCaseRequest request) {
+        com.bankops.portal.assignment.AssignmentResult result = assignmentService.manualAssign(
+                id, request.getAgentId(), "USER", java.util.UUID.randomUUID().toString());
+        return ResponseEntity.ok(toAssignmentResultDto(result));
+    }
+
+    @PostMapping("/{id}/auto-assign")
+    public ResponseEntity<com.bankops.portal.dto.AssignmentResultDto> autoAssignCase(@PathVariable Long id) {
+        com.bankops.portal.assignment.AssignmentResult result = assignmentService.autoAssign(
+                id, java.util.UUID.randomUUID().toString());
+        return ResponseEntity.ok(toAssignmentResultDto(result));
+    }
+
+    @GetMapping("/agents/available")
+    public ResponseEntity<java.util.List<com.bankops.portal.dto.AgentDto>> getAvailableAgents() {
+        java.util.List<com.bankops.portal.entity.Agent> agents = assignmentService.getAvailableAgents();
+        return ResponseEntity.ok(agents.stream().map(this::toAgentDto).collect(java.util.stream.Collectors.toList()));
+    }
+
+    private com.bankops.portal.dto.AssignmentResultDto toAssignmentResultDto(
+            com.bankops.portal.assignment.AssignmentResult result) {
+        return com.bankops.portal.dto.AssignmentResultDto.builder()
+                .success(result.isSuccess())
+                .reason(result.getReason())
+                .assignedAgent(result.getAssignedAgent() != null ? toAgentDto(result.getAssignedAgent()) : null)
+                .policyVersion(result.getPolicyVersion())
+                .build();
+    }
+
+    private com.bankops.portal.dto.AgentDto toAgentDto(com.bankops.portal.entity.Agent agent) {
+        java.util.List<String> skills = null;
+        if (agent.getSkills() != null && !agent.getSkills().isEmpty()) {
+            try {
+                skills = new com.fasterxml.jackson.databind.ObjectMapper().readValue(agent.getSkills(),
+                        java.util.List.class);
+            } catch (Exception e) {
+                skills = java.util.Collections.emptyList();
+            }
+        }
+        return com.bankops.portal.dto.AgentDto.builder()
+                .id(agent.getId())
+                .name(agent.getName())
+                .email(agent.getEmail())
+                .active(agent.getActive())
+                .maxActiveCases(agent.getMaxActiveCases())
+                .currentActiveCount(agent.getCurrentActiveCount())
+                .skills(skills)
+                .build();
+    }
+}
