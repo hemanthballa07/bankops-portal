@@ -1,53 +1,288 @@
-.customers-container {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.customers {
+  padding: $spacing-xl;
+  max-width: $page-max-width;
 }
 
-.search-bar {
+// ============================================
+// PAGE HEADER
+// ============================================
+.page-header {
   display: flex;
-  gap: 16px;
-  margin-bottom: 20px;
-  align-items: center;
-}
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: $spacing-xl;
 
-.search-field {
-  flex: 1;
-}
+  h1 {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-bold;
+    color: $color-text-primary;
+    margin: 0 0 4px;
+  }
 
-.create-button {
-  height: 56px;
-}
+  .subtitle {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin: 0;
+  }
 
-.create-form {
-  background: #f5f5f5;
-  padding: 20px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-}
+  .btn-primary {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    background: $color-info;
+    color: #fff;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    border-radius: $border-radius-lg;
+    padding: 0 $spacing-md;
+    height: 36px;
 
-.form-row {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
+    mat-icon { font-size: 18px; }
 
-  mat-form-field {
-    flex: 1;
+    &:hover { background: darken(#3B82F6, 6%); }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
   }
 }
 
-.form-actions {
+// ============================================
+// CREATE FORM PANEL
+// ============================================
+.create-panel {
+  background: $color-bg-primary;
+  border: $border-width solid $color-border;
+  border-radius: $border-radius-xl;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+
+  .create-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $spacing-lg;
+
+    h2 {
+      font-size: $font-size-md;
+      font-weight: $font-weight-semibold;
+      color: $color-text-primary;
+      margin: 0;
+    }
+
+    .close-btn {
+      color: $color-text-secondary;
+      &:hover { color: $color-text-primary; }
+    }
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 $spacing-lg;
+
+    @media (max-width: 640px) { grid-template-columns: 1fr; }
+
+    .field { width: 100%; }
+  }
+
+  .form-actions {
+    display: flex;
+    gap: $spacing-sm;
+    justify-content: flex-end;
+    margin-top: $spacing-sm;
+    padding-top: $spacing-md;
+    border-top: $border-width solid $color-border;
+  }
+}
+
+// ============================================
+// TABLE PANEL
+// ============================================
+.panel {
+  background: $color-bg-primary;
+  border: $border-width solid $color-border;
+  border-radius: $border-radius-xl;
+  overflow: hidden;
+}
+
+// ============================================
+// TOOLBAR / SEARCH
+// ============================================
+.toolbar {
   display: flex;
-  gap: 8px;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md $spacing-lg;
+  border-bottom: $border-width solid $color-border;
+  gap: $spacing-md;
 }
 
-.customers-table {
+.search-wrap {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  background: $color-bg-secondary;
+  border: $border-width solid $color-border;
+  border-radius: $border-radius-lg;
+  padding: 0 $spacing-sm 0 $spacing-md;
+  flex: 1;
+  max-width: 400px;
+  transition: border-color $transition-fast;
+
+  &:focus-within {
+    border-color: $color-border-focus;
+    background: $color-bg-primary;
+  }
+
+  .search-icon {
+    font-size: 18px;
+    color: $color-text-tertiary;
+    flex-shrink: 0;
+  }
+
+  .search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    padding: 8px 0;
+
+    &::placeholder { color: $color-text-tertiary; }
+  }
+
+  .clear-btn {
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    color: $color-text-tertiary;
+    flex-shrink: 0;
+
+    mat-icon { font-size: 16px; }
+  }
+}
+
+.result-count {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+// ============================================
+// LOADING + EMPTY
+// ============================================
+.loading-state {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-2xl;
+  justify-content: center;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-2xl;
+  justify-content: center;
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+
+  mat-icon { font-size: 20px; }
+}
+
+// ============================================
+// DATA TABLE
+// ============================================
+.data-table {
   width: 100%;
-  margin-top: 20px;
+  border-collapse: collapse;
+
+  thead tr {
+    background: $color-bg-secondary;
+  }
+
+  th {
+    padding: $spacing-sm $spacing-lg;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+    border-bottom: $border-width solid $color-border;
+    white-space: nowrap;
+  }
+
+  .data-row {
+    border-bottom: $border-width solid $color-border;
+    transition: background $transition-fast;
+
+    &:last-child { border-bottom: none; }
+    &:hover { background: $color-bg-hover; }
+  }
+
+  td {
+    padding: $spacing-md $spacing-lg;
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    vertical-align: middle;
+  }
+
+  .text-secondary { color: $color-text-secondary; }
+  .text-tertiary  { color: $color-text-tertiary; }
+  .mono           { font-family: $font-family-mono; font-size: $font-size-xs; }
+
+  .actions-cell {
+    text-align: right;
+    width: 48px;
+    padding-right: $spacing-md;
+  }
+
+  .action-btn {
+    color: $color-text-tertiary;
+    opacity: 0;
+    transition: opacity $transition-fast, color $transition-fast;
+
+    mat-icon { font-size: 18px; }
+  }
+
+  .data-row:hover .action-btn {
+    opacity: 1;
+    color: $color-info;
+  }
 }
 
+// ============================================
+// CUSTOMER CELL (avatar + name)
+// ============================================
+.customer-cell {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
 
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: $border-radius-full;
+  background: rgba($color-info, 0.12);
+  color: $color-info;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
 
-
-
+.name {
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}

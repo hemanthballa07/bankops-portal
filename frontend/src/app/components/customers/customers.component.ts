@@ -2,13 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatDialogModule } from '@angular/material/dialog';
-import { MatCardModule } from '@angular/material/card';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { CustomerService } from '../../services/customer.service';
 import { Customer, CreateCustomerRequest } from '../../models/customer.model';
 
@@ -19,23 +18,22 @@ import { Customer, CreateCustomerRequest } from '../../models/customer.model';
     CommonModule,
     FormsModule,
     RouterModule,
-    MatTableModule,
     MatButtonModule,
     MatInputModule,
     MatFormFieldModule,
     MatIconModule,
-    MatDialogModule,
-    MatCardModule
+    MatProgressSpinnerModule,
+    MatTooltipModule,
   ],
   templateUrl: './customers.component.html',
   styleUrls: ['./customers.component.scss']
 })
 export class CustomersComponent implements OnInit {
   customers: Customer[] = [];
-  displayedColumns: string[] = ['id', 'firstName', 'lastName', 'email', 'phone', 'actions'];
-  searchQuery: string = '';
-  showCreateForm: boolean = false;
-  
+  loading = true;
+  searchQuery = '';
+  showCreateForm = false;
+
   newCustomer: CreateCustomerRequest = {
     firstName: '',
     lastName: '',
@@ -50,9 +48,15 @@ export class CustomersComponent implements OnInit {
   }
 
   loadCustomers(): void {
+    this.loading = true;
     this.customerService.searchCustomers(this.searchQuery).subscribe({
-      next: (data) => this.customers = data,
-      error: (error) => console.error('Error loading customers:', error)
+      next: (data) => {
+        this.customers = data;
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+      }
     });
   }
 
@@ -69,7 +73,6 @@ export class CustomersComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error creating customer:', error);
-        alert('Failed to create customer: ' + (error.error?.message || error.message));
       }
     });
   }
@@ -78,8 +81,3 @@ export class CustomersComponent implements OnInit {
     this.showCreateForm = !this.showCreateForm;
   }
 }
-
-
-
-
-
