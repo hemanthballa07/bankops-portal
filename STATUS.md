@@ -8,6 +8,7 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 4 (UI redesign) in progress.
 - **Step 3 (HELD badge + release/reject UI)** — done 2026-05-28.
 - **Step A (e2e verification)** — CLOSED 2026-05-30. Four bankops bugs fixed. Full chain proven: POST → 202/HELD → EvaluateTransaction RPC → P1 SupportCase.
 - **Step 4 (UI redesign)** — IN PROGRESS 2026-05-30. Dark sidebar + Dashboard + Fraud Review Center built. See "In progress" for what's left.
+- **Trifecta console e2e (CORS + durable seed)** — CLOSED 2026-05-31. trifecta-console (`:3001`) → bankops verified in-browser end-to-end; commits `03749e3` (CORS), `46337d1` (seeder).
 
 ## Done
 - Full `/understand` analysis run (2026-05-26, commit `9a461977`)
@@ -30,6 +31,10 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 4 (UI redesign) in progress.
   - New screen `/dashboard`: 4 KPI cards + 2-column feed (recent fraud holds + case queue). Default route changed.
   - New screen `/fraud-review`: HELD table, per-row release/reject, batch select/action, spinner states, empty state.
   - Angular build: 0 hard errors; CSS budget raised to 10kb in `angular.json`.
+- **Trifecta console e2e — CORS + restart-durable seed (2026-05-31)**
+  - CORS (commit `03749e3`): added `http://localhost:3001` (trifecta-console) to `CorsConfig` allowed origins; `LocalConsoleSecurityConfig` now calls `.cors(Customizer.withDefaults())` so the `CorsConfigurationSource` bean applies to its `@Order(1)` chain. Fixes browser-side 403 preflight + missing ACAO that made the console silently fall back to mock data and fire-and-forget releases.
+  - Seed (commit `46337d1`): `LocalDataSeeder` — `@Profile("local")` `CommandLineRunner`, idempotent (`count()==0`), seeds Customer id=1 + Account id=1 (CHEQUING, balance 250000) on empty H2. Root-cause fix for account 1 vanishing on every restart (in-memory H2 + no data seeding).
+  - Fluxa verified the full in-browser chain with `Origin :3001`: POST→202/HELD → gRPC FLAG 24.5ms → P1 case → console `GET ?status=HELD` (real data, no mock fallback) → SSE match → release preflight 200 → release POST 200/RELEASED → queue cleared. (Network-contract CORS leg proven; pixel React click-through deferred — Fluxa's Playwright MCP lacks a connected browser bridge.)
 
 ## In progress
 - **Step 4 remaining screens** (~11 of 15+ still to build):
@@ -48,17 +53,13 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 4 (UI redesign) in progress.
 - Final typography + density decisions for redesigned screens.
 
 ## Reference
-- **Restart sequence (H2 wipes on restart — always re-seed after):**
+- **Restart sequence** — H2 wipes on restart, but `LocalDataSeeder` (`@Profile("local")`) now auto-seeds Customer id=1 + Account id=1 (CHEQUING, balance 250000) on an empty DB, so manual customer/account re-seed is **no longer needed**:
   ```bash
-  # Kill running: find PIDs via `ps aux | grep BankOps`
+  # Kill running: lsof -tiTCP:8080 -sTCP:LISTEN | xargs kill   (or `ps aux | grep BankOps`)
   cd bankops-portal && JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
     mvn -f backend/pom.xml spring-boot:run -Dspring-boot.run.profiles=local
-  # Re-seed after startup:
-  curl -sX POST localhost:8080/api/customers -u support:password \
-    -H 'Content-Type: application/json' \
-    -d '{"firstName":"Alice","lastName":"Smith","email":"alice@example.com","phone":"555-0100"}'
-  curl -sX POST localhost:8080/api/customers/1/accounts -u support:password \
-    -H 'Content-Type: application/json' -d '{"type":"CHEQUING"}'
+  # On boot, log confirms: "Local seed created customer id=1 + account id=1 (balance 250000.00)"
+  # Create a HELD demo txn (amount > 500 threshold) when needed:
   curl -sX POST localhost:8080/api/accounts/1/transactions -u support:password \
     -H 'Content-Type: application/json' -H 'Idempotency-Key: demo-held-1' \
     -d '{"type":"DEPOSIT","amount":99999,"description":"luxury car"}'
