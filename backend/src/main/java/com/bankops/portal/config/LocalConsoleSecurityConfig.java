@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -26,6 +27,7 @@ public class LocalConsoleSecurityConfig {
                 "/accounts/*/transactions/*/release",
                 "/accounts/*/transactions/*/reject"
             )
+            .cors(Customizer.withDefaults())  // apply CorsConfigurationSource bean to this chain (trifecta-console origin)
             .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
             .csrf(csrf -> csrf.disable());
         return http.build();

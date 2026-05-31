@@ -20,6 +20,7 @@ public class CorsConfig {
         configuration.setAllowedOrigins(List.of(
             "http://localhost:4200",  // Local development
             "http://localhost:3000",  // Alternative local port
+            "http://localhost:3001",  // trifecta-console (Fluxa fraud ops console)
             frontendUrl  // Production (set via environment variable)
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
