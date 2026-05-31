@@ -9,7 +9,8 @@ import {
   AssignCaseRequest,
   AddCaseNoteRequest,
   ResolveCaseRequest,
-  CaseNote
+  CaseNote,
+  CaseKpi
 } from '../models/case.model';
 
 @Injectable({
@@ -53,6 +54,10 @@ export class CaseService {
 
   resolveCase(id: number, request: ResolveCaseRequest): Observable<SupportCase> {
     return this.http.put<SupportCase>(`${this.apiUrl}/${id}/resolve`, request);
+  }
+
+  getKpis(): Observable<CaseKpi> {
+    return this.http.get<CaseKpi>(`${this.apiUrl}/kpis`);
   }
 }
 

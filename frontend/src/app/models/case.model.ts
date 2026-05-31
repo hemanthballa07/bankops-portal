@@ -46,6 +46,14 @@ export interface ResolveCaseRequest {
   resolution: string;
 }
 
+export interface CaseKpi {
+  openCases: number;
+  unassignedCases: number;
+  slaAtRiskCases: number;
+  highSeverityCases: number;
+  unassignedHighSeverity: number;
+}
+
 
 
 

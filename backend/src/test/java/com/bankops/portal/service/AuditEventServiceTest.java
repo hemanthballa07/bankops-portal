@@ -76,10 +76,7 @@ class AuditEventServiceTest {
 
     @Test
     void testRecordEvent_WithNullValues() throws Exception {
-        // Arrange
-        when(objectMapper.writeValueAsString(null)).thenReturn(null);
-
-        // Act
+        // Act — null values are handled before writeValueAsString, no stub needed
         auditEventService.recordEvent(
                 AuditEvent.EntityType.ACCOUNT,
                 1L,

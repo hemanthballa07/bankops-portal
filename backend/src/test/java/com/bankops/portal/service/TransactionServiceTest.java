@@ -1,5 +1,8 @@
 package com.bankops.portal.service;
 
+import com.bankops.portal.client.fluxa.FluxaEvalOutcome;
+import com.bankops.portal.client.fluxa.FluxaFraudClient;
+import com.bankops.portal.config.FluxaProperties;
 import com.bankops.portal.dto.CreateTransactionRequest;
 import com.bankops.portal.dto.TransactionDto;
 import com.bankops.portal.entity.Account;
@@ -14,17 +17,18 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,7 +47,22 @@ class TransactionServiceTest {
     @Mock
     private LoggingService loggingService;
 
-    @InjectMocks
+    @Mock
+    private AuditEventService auditEventService;
+
+    @Mock
+    private FluxaFraudClient fluxaFraudClient;
+
+    @Mock
+    private CaseService caseService;
+
+    // FluxaProperties is a record (final class) — use a real instance with Fluxa disabled
+    private final FluxaProperties fluxaProperties = new FluxaProperties(
+            false, false, "localhost", 9090,
+            Duration.ofMillis(80),
+            FluxaProperties.Failure.FAIL_OPEN,
+            FluxaProperties.Failure.FAIL_OPEN);
+
     private TransactionService transactionService;
 
     private Account testAccount;
@@ -51,7 +70,6 @@ class TransactionServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Arrange: Set up test data
         testCustomer = Customer.builder()
                 .id(1L)
                 .firstName("John")
@@ -69,6 +87,10 @@ class TransactionServiceTest {
                 .overdraftEnabled(false)
                 .createdAt(LocalDateTime.now())
                 .build();
+
+        transactionService = new TransactionService(
+                transactionRepository, accountRepository, loggingService,
+                auditEventService, fluxaFraudClient, fluxaProperties, caseService);
     }
 
     // ========== Successful Transaction Tests ==========
@@ -99,28 +121,33 @@ class TransactionServiceTest {
         assertEquals("DEPOSIT", result.getType());
         assertEquals(new BigDecimal("500.00"), result.getAmount());
         assertEquals("Paycheck deposit", result.getDescription());
-        assertEquals("PENDING", result.getStatus());
+        assertEquals("COMPLETED", result.getStatus());
         assertNotNull(result.getCorrelationId());
 
         // Verify balance was updated
         ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
-        verify(accountRepository, times(2)).save(accountCaptor.capture());
+        verify(accountRepository, times(1)).save(accountCaptor.capture());
         assertEquals(new BigDecimal("1500.00"), accountCaptor.getValue().getBalance());
 
-        // Verify transaction was saved
-        verify(transactionRepository).save(any(Transaction.class));
+        // Verify transaction was saved twice: once as PENDING, once as COMPLETED
+        verify(transactionRepository, times(2)).save(any(Transaction.class));
     }
 
     @Test
     @DisplayName("Should successfully create a withdrawal transaction with sufficient balance")
     void testCreateWithdrawal_Success() {
         // Arrange
+        String idemKey = "idem-withdraw-300";
         CreateTransactionRequest request = new CreateTransactionRequest();
         request.setType("WITHDRAWAL");
         request.setAmount(new BigDecimal("300.00"));
         request.setDescription("ATM withdrawal");
         request.setCategory("OTHER");
 
+        when(transactionRepository.findByAccount_IdAndIdempotencyKeyAndType(
+                anyLong(), anyString(), any())).thenReturn(Optional.empty());
+        when(fluxaFraudClient.evaluate(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new FluxaEvalOutcome.Disabled());
         when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
             Transaction t = invocation.getArgument(0);
@@ -130,7 +157,7 @@ class TransactionServiceTest {
         when(accountRepository.save(any(Account.class))).thenReturn(testAccount);
 
         // Act
-        TransactionDto result = transactionService.createTransaction(100L, request, null);
+        TransactionDto result = transactionService.createTransaction(100L, request, idemKey);
 
         // Assert
         assertNotNull(result);
@@ -139,7 +166,7 @@ class TransactionServiceTest {
 
         // Verify balance was updated
         ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
-        verify(accountRepository, times(2)).save(accountCaptor.capture());
+        verify(accountRepository, times(1)).save(accountCaptor.capture());
         assertEquals(new BigDecimal("700.00"), accountCaptor.getValue().getBalance());
     }
 
@@ -148,11 +175,16 @@ class TransactionServiceTest {
     void testCreateWithdrawal_WithOverdraft_Success() {
         // Arrange
         testAccount.setOverdraftEnabled(true);
+        String idemKey = "idem-overdraft";
         CreateTransactionRequest request = new CreateTransactionRequest();
         request.setType("WITHDRAWAL");
         request.setAmount(new BigDecimal("1200.00")); // More than balance
         request.setCategory("OTHER");
 
+        when(transactionRepository.findByAccount_IdAndIdempotencyKeyAndType(
+                anyLong(), anyString(), any())).thenReturn(Optional.empty());
+        when(fluxaFraudClient.evaluate(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new FluxaEvalOutcome.Disabled());
         when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
             Transaction t = invocation.getArgument(0);
@@ -162,7 +194,7 @@ class TransactionServiceTest {
         when(accountRepository.save(any(Account.class))).thenReturn(testAccount);
 
         // Act
-        TransactionDto result = transactionService.createTransaction(100L, request, null);
+        TransactionDto result = transactionService.createTransaction(100L, request, idemKey);
 
         // Assert
         assertNotNull(result);
@@ -170,7 +202,7 @@ class TransactionServiceTest {
 
         // Verify balance went negative
         ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
-        verify(accountRepository, times(2)).save(accountCaptor.capture());
+        verify(accountRepository, times(1)).save(accountCaptor.capture());
         assertEquals(new BigDecimal("-200.00"), accountCaptor.getValue().getBalance());
     }
 
@@ -216,12 +248,10 @@ class TransactionServiceTest {
     @Test
     @DisplayName("Should throw exception for invalid transaction type")
     void testCreateTransaction_InvalidType() {
-        // Arrange
+        // Arrange — invalid type rejected before any repository call
         CreateTransactionRequest request = new CreateTransactionRequest();
         request.setType("INVALID_TYPE");
         request.setAmount(new BigDecimal("100.00"));
-
-        when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
 
         // Act & Assert
         IllegalArgumentException exception = assertThrows(
@@ -273,17 +303,22 @@ class TransactionServiceTest {
     @DisplayName("Should throw exception for insufficient funds without overdraft")
     void testCreateWithdrawal_InsufficientFunds() {
         // Arrange
+        String idemKey = "idem-insufficient";
         CreateTransactionRequest request = new CreateTransactionRequest();
         request.setType("WITHDRAWAL");
         request.setAmount(new BigDecimal("1500.00")); // More than balance
         request.setCategory("OTHER");
 
+        when(transactionRepository.findByAccount_IdAndIdempotencyKeyAndType(
+                anyLong(), anyString(), any())).thenReturn(Optional.empty());
+        when(fluxaFraudClient.evaluate(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new FluxaEvalOutcome.Disabled());
         when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
 
         // Act & Assert
         IllegalStateException exception = assertThrows(
                 IllegalStateException.class,
-                () -> transactionService.createTransaction(100L, request, null));
+                () -> transactionService.createTransaction(100L, request, idemKey));
         assertEquals("Insufficient funds. Overdraft not enabled.", exception.getMessage());
         verify(transactionRepository, never()).save(any());
         verify(loggingService).logEvent(anyString(), eq(LogEvent.LogLevel.WARN), anyString(), any());
@@ -293,11 +328,16 @@ class TransactionServiceTest {
     @DisplayName("Should handle exact balance withdrawal")
     void testCreateWithdrawal_ExactBalance() {
         // Arrange
+        String idemKey = "idem-exact";
         CreateTransactionRequest request = new CreateTransactionRequest();
         request.setType("WITHDRAWAL");
         request.setAmount(new BigDecimal("1000.00")); // Exact balance
         request.setCategory("OTHER");
 
+        when(transactionRepository.findByAccount_IdAndIdempotencyKeyAndType(
+                anyLong(), anyString(), any())).thenReturn(Optional.empty());
+        when(fluxaFraudClient.evaluate(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new FluxaEvalOutcome.Disabled());
         when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
             Transaction t = invocation.getArgument(0);
@@ -307,13 +347,13 @@ class TransactionServiceTest {
         when(accountRepository.save(any(Account.class))).thenReturn(testAccount);
 
         // Act
-        TransactionDto result = transactionService.createTransaction(100L, request, null);
+        TransactionDto result = transactionService.createTransaction(100L, request, idemKey);
 
         // Assert
         assertNotNull(result);
         ArgumentCaptor<Account> accountCaptor = ArgumentCaptor.forClass(Account.class);
-        verify(accountRepository, times(2)).save(accountCaptor.capture());
-        assertEquals(BigDecimal.ZERO, accountCaptor.getValue().getBalance());
+        verify(accountRepository, times(1)).save(accountCaptor.capture());
+        assertEquals(0, BigDecimal.ZERO.compareTo(accountCaptor.getValue().getBalance()));
     }
 
     @Test
@@ -370,11 +410,16 @@ class TransactionServiceTest {
     @DisplayName("Should correctly parse valid category")
     void testCreateTransaction_ValidCategory() {
         // Arrange
+        String idemKey = "idem-groceries";
         CreateTransactionRequest request = new CreateTransactionRequest();
         request.setType("WITHDRAWAL");
         request.setAmount(new BigDecimal("50.00"));
         request.setCategory("GROCERIES");
 
+        when(transactionRepository.findByAccount_IdAndIdempotencyKeyAndType(
+                anyLong(), anyString(), any())).thenReturn(Optional.empty());
+        when(fluxaFraudClient.evaluate(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new FluxaEvalOutcome.Disabled());
         when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
             Transaction t = invocation.getArgument(0);
@@ -384,7 +429,7 @@ class TransactionServiceTest {
         when(accountRepository.save(any(Account.class))).thenReturn(testAccount);
 
         // Act
-        TransactionDto result = transactionService.createTransaction(100L, request, null);
+        TransactionDto result = transactionService.createTransaction(100L, request, idemKey);
 
         // Assert
         assertNotNull(result);

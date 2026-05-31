@@ -17,6 +17,11 @@ export interface CreateTransactionRequest {
   category?: string;
 }
 
+export interface ReviewTransactionRequest {
+  actorId?: string;
+  notes?: string;
+}
+
 export interface TransactionFilterRequest {
   startDate?: string; // ISO date format
   endDate?: string;

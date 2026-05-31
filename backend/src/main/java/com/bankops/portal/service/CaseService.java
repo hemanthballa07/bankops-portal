@@ -1,5 +1,6 @@
 package com.bankops.portal.service;
 
+import com.bankops.portal.client.fluxa.FraudFlagDto;
 import com.bankops.portal.dto.CreateCaseRequest;
 import com.bankops.portal.dto.SupportCaseDto;
 import com.bankops.portal.dto.UpdateCaseRequest;
@@ -109,6 +110,39 @@ public class CaseService {
                 return toDto(supportCase);
         }
 
+        /**
+         * Creates a fraud-hold case for a transaction that Fluxa flagged. Wraps
+         * {@link #createCase} so it inherits auto-assignment and SLA bootstrap, then
+         * upgrades the SLA to P1 (the {@code createCase} default is P2; there is no
+         * severity → priority mapping in the base method).
+         */
+        @Transactional
+        public SupportCaseDto createForFraud(Transaction tx, List<FraudFlagDto> flags) {
+                String summary = "Fraud held: tx " + tx.getCorrelationId() + " — "
+                                + flags.stream().map(FraudFlagDto::ruleValue)
+                                                .collect(Collectors.joining("; "));
+
+                CreateCaseRequest req = new CreateCaseRequest();
+                req.setCustomerId(tx.getAccount().getCustomer().getId());
+                req.setAccountId(tx.getAccount().getId());
+                req.setTransactionId(tx.getId());
+                req.setSeverity(SupportCase.CaseSeverity.HIGH.name());
+                req.setSummary(summary);
+
+                SupportCaseDto dto = createCase(req);
+
+                // createCase set P2 SLA; fraud cases need P1. Clear slaDueAt so
+                // initializeSla's already-initialized guard does not short-circuit.
+                SupportCase reloaded = caseRepository.findById(dto.getId())
+                                .orElseThrow(() -> new IllegalStateException(
+                                                "Case disappeared after createCase: " + dto.getId()));
+                reloaded.setSlaDueAt(null);
+                slaService.initializeSla(reloaded, SlaPriority.P1);
+                caseRepository.save(reloaded);
+
+                return toDto(reloaded);
+        }
+
         public List<SupportCaseDto> getCases(CaseState state, SupportCase.CaseSeverity severity) {
                 List<SupportCase> cases = caseRepository.findByStateAndSeverity(state, severity);
                 return cases.stream()
@@ -185,6 +219,7 @@ public class CaseService {
                                 .relatedTransactionIds(supportCase.getRelatedTransactions().stream()
                                                 .map(Transaction::getId)
                                                 .collect(Collectors.toList()))
+                                .correlationId(supportCase.getCorrelationId())
                                 .resolvedAt(supportCase.getResolvedAt())
                                 .resolution(supportCase.getResolution())
                                 .build();

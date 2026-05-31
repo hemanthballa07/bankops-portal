@@ -1,5 +1,6 @@
 package com.bankops.portal.exception;
 
+import com.bankops.portal.client.fluxa.FluxaUnavailableException;
 import com.bankops.portal.dto.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -64,6 +65,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
     
+    @ExceptionHandler(FluxaUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleFluxaUnavailable(
+            FluxaUnavailableException ex, WebRequest request) {
+        ErrorResponse error = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.SERVICE_UNAVAILABLE.value())
+                .error("Service Unavailable")
+                .message(ex.getMessage())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .build();
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex, WebRequest request) {

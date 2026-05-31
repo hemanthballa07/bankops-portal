@@ -106,8 +106,8 @@ class AssignmentServiceTest {
         Agent bob = createAgent(2L, "Bob", "bob@test.com", 9, 10); // Under max
 
         when(agentRepository.findByActiveTrue()).thenReturn(List.of(alice, bob));
-        when(caseRepository.countByAssigneeIdAndStateIn(1L, anyList())).thenReturn(10L);
-        when(caseRepository.countByAssigneeIdAndStateIn(2L, anyList())).thenReturn(9L);
+        when(caseRepository.countByAssigneeIdAndStateIn(eq(1L), anyList())).thenReturn(10L);
+        when(caseRepository.countByAssigneeIdAndStateIn(eq(2L), anyList())).thenReturn(9L);
 
         // When
         List<Agent> available = assignmentService.getAvailableAgents();
@@ -155,7 +155,7 @@ class AssignmentServiceTest {
     // ========== Auto-Assignment Tests ==========
 
     @Test
-    void testAutoAssignSuccess() {
+    void testAutoAssignSuccess() throws Exception {
         // Given
         Agent bob = createAgent(2L, "Bob", "bob@test.com", 3);
 
@@ -212,7 +212,7 @@ class AssignmentServiceTest {
     // ========== Manual Assignment Tests ==========
 
     @Test
-    void testManualAssignSuccess() {
+    void testManualAssignSuccess() throws Exception {
         // Given
         Agent bob = createAgent(2L, "Bob", "bob@test.com", 3);
 

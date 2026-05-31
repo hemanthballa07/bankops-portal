@@ -1,0 +1,9 @@
+# Local-dev overlay — gate enabled with enforcement (shadow off); fail-open both
+# directions to keep dev flowing when fluxa is down.
+bankops:
+  fluxa:
+    enabled: true
+    shadow-mode: false
+    withdrawal: FAIL_OPEN
+    deposit: FAIL_OPEN
+    deadline: PT2S

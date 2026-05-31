@@ -1,8 +1,10 @@
 package com.bankops.portal.controller;
 
+import com.bankops.portal.entity.Transaction;
 import com.bankops.portal.dto.CreateTransactionRequest;
 import com.bankops.portal.dto.MonthlySpendingDto;
 import com.bankops.portal.dto.PagedResponse;
+import com.bankops.portal.dto.ReviewTransactionRequest;
 import com.bankops.portal.dto.SpendingSummaryDto;
 import com.bankops.portal.dto.TransactionDto;
 import com.bankops.portal.dto.TransactionFilterRequest;
@@ -30,7 +32,11 @@ public class TransactionController {
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @Valid @RequestBody CreateTransactionRequest request) {
         TransactionDto transaction = transactionService.createTransaction(accountId, request, idempotencyKey);
-        return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
+        // HELD transactions are flagged by Fluxa and sent to ops review — surface as 202 ACCEPTED.
+        HttpStatus status = Transaction.TransactionStatus.HELD.name().equals(transaction.getStatus())
+                ? HttpStatus.ACCEPTED
+                : HttpStatus.CREATED;
+        return ResponseEntity.status(status).body(transaction);
     }
 
     @GetMapping
@@ -56,6 +62,26 @@ public class TransactionController {
 
         PagedResponse<TransactionDto> response = transactionService.getFilteredTransactions(accountId, filters);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{transactionId}/release")
+    public ResponseEntity<TransactionDto> releaseTransaction(
+            @PathVariable Long accountId,
+            @PathVariable Long transactionId,
+            @RequestBody(required = false) ReviewTransactionRequest request) {
+        String actorId = request != null ? request.getActorId() : null;
+        String notes = request != null ? request.getNotes() : null;
+        return ResponseEntity.ok(transactionService.releaseTransaction(accountId, transactionId, actorId, notes));
+    }
+
+    @PostMapping("/{transactionId}/reject")
+    public ResponseEntity<TransactionDto> rejectTransaction(
+            @PathVariable Long accountId,
+            @PathVariable Long transactionId,
+            @RequestBody(required = false) ReviewTransactionRequest request) {
+        String actorId = request != null ? request.getActorId() : null;
+        String notes = request != null ? request.getNotes() : null;
+        return ResponseEntity.ok(transactionService.rejectTransaction(accountId, transactionId, actorId, notes));
     }
 
     @GetMapping("/spending-summary")

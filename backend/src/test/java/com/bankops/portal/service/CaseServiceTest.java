@@ -5,6 +5,7 @@ import com.bankops.portal.dto.SupportCaseDto;
 import com.bankops.portal.dto.UpdateCaseRequest;
 import com.bankops.portal.entity.*;
 import com.bankops.portal.repository.*;
+import com.bankops.portal.sla.SlaService;
 import com.bankops.portal.statemachine.CaseState;
 import com.bankops.portal.statemachine.CaseStateMachine;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +44,13 @@ class CaseServiceTest {
     private AuditEventService auditEventService;
 
     @Mock
+    private SlaService slaService;
+
+    @Mock
     private CaseStateMachine stateMachine;
+
+    @Mock
+    private com.bankops.portal.assignment.AssignmentService assignmentService;
 
     @InjectMocks
     private CaseService caseService;

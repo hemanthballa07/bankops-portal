@@ -15,6 +15,7 @@ import { AccountService } from '../../services/account.service';
 import { TransactionService } from '../../services/transaction.service';
 import { Account } from '../../models/account.model';
 import { Transaction, CreateTransactionRequest, TransactionFilterRequest } from '../../models/transaction.model';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TransactionFilterComponent } from '../transaction-filter/transaction-filter.component';
 import { SpendingSummaryComponent } from '../spending-summary/spending-summary.component';
 import { MonthlyChartComponent } from '../monthly-chart/monthly-chart.component';
@@ -35,6 +36,7 @@ import { MonthlyChartComponent } from '../monthly-chart/monthly-chart.component'
     MatIconModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
+    MatTooltipModule,
     TransactionFilterComponent,
     SpendingSummaryComponent,
     MonthlyChartComponent
@@ -45,9 +47,10 @@ import { MonthlyChartComponent } from '../monthly-chart/monthly-chart.component'
 export class AccountDetailComponent implements OnInit {
   account?: Account;
   transactions: Transaction[] = [];
-  displayedColumns: string[] = ['id', 'type', 'amount', 'status', 'description', 'correlationId', 'createdAt'];
+  displayedColumns: string[] = ['id', 'type', 'amount', 'status', 'description', 'correlationId', 'createdAt', 'actions'];
   showTransactionForm: boolean = false;
   loading: boolean = false;
+  reviewingTransactionId: number | null = null;
 
   // Pagination
   totalElements: number = 0;
@@ -166,6 +169,37 @@ export class AccountDetailComponent implements OnInit {
 
   viewIncident(correlationId: string): void {
     this.router.navigate(['/incidents', correlationId]);
+  }
+
+  releaseHeld(transaction: Transaction): void {
+    if (!this.account || !confirm(`Release held transaction #${transaction.id} for $${transaction.amount}? This will debit the account.`)) return;
+    this.reviewingTransactionId = transaction.id;
+    this.transactionService.releaseTransaction(this.account.id, transaction.id).subscribe({
+      next: () => {
+        this.reviewingTransactionId = null;
+        this.loadAccount(this.account!.id);
+        this.loadTransactions(this.account!.id, this.currentFilters);
+      },
+      error: (err) => {
+        this.reviewingTransactionId = null;
+        alert('Release failed: ' + (err.error?.message || err.message));
+      }
+    });
+  }
+
+  rejectHeld(transaction: Transaction): void {
+    if (!this.account || !confirm(`Reject held transaction #${transaction.id}? The withdrawal will be denied.`)) return;
+    this.reviewingTransactionId = transaction.id;
+    this.transactionService.rejectTransaction(this.account.id, transaction.id).subscribe({
+      next: () => {
+        this.reviewingTransactionId = null;
+        this.loadTransactions(this.account!.id, this.currentFilters);
+      },
+      error: (err) => {
+        this.reviewingTransactionId = null;
+        alert('Reject failed: ' + (err.error?.message || err.message));
+      }
+    });
   }
 }
 

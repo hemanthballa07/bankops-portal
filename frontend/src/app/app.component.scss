@@ -11,24 +11,97 @@
 // BRAND BAR
 // ============================================
 .brand-bar {
-    background: $color-bg-primary;
-    color: $color-text-primary;
-    border-bottom: $border-width solid $color-border;
     height: $header-height;
     z-index: $z-index-sticky;
-    box-shadow: $elevation-sm;
 
-    .sidebar-toggle {
-        margin-right: $spacing-md;
+    &.dark {
+        background: $chrome-bg;
+        color: $chrome-text-active;
+        border-bottom: 1px solid $chrome-border;
+        box-shadow: none;
     }
 
-    .brand-name {
-        font-size: $font-size-lg;
-        font-weight: $font-weight-semibold;
+    .sidebar-toggle {
+        margin-right: $spacing-sm;
+        color: $chrome-text;
+
+        &:hover {
+            color: $chrome-text-active;
+        }
+    }
+
+    .brand-lockup {
+        display: flex;
+        align-items: center;
+        gap: $spacing-sm;
+
+        .brand-icon {
+            font-size: 20px;
+            color: $chrome-accent;
+        }
+
+        .brand-name {
+            font-size: $font-size-md;
+            font-weight: $font-weight-bold;
+            color: $chrome-text-active;
+            letter-spacing: -0.3px;
+        }
+
+        .brand-tag {
+            font-size: $font-size-xs;
+            font-weight: $font-weight-medium;
+            color: $chrome-text;
+            letter-spacing: 0.8px;
+            padding: 2px 6px;
+            border: 1px solid $chrome-border;
+            border-radius: $border-radius-sm;
+            margin-left: 2px;
+        }
     }
 
     .spacer {
         flex: 1;
+    }
+
+    .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: $spacing-xs;
+
+        .topbar-btn {
+            color: $chrome-text;
+
+            &:hover {
+                color: $chrome-text-active;
+                background: $chrome-bg-hover;
+            }
+        }
+
+        .avatar-pill {
+            display: flex;
+            align-items: center;
+            gap: $spacing-xs;
+            padding: 4px 10px 4px 6px;
+            border-radius: $border-radius-full;
+            border: 1px solid $chrome-border;
+            cursor: pointer;
+            color: $chrome-text;
+            font-size: $font-size-sm;
+            font-weight: $font-weight-medium;
+            transition: all $transition-fast;
+            margin-left: $spacing-xs;
+
+            mat-icon {
+                font-size: 20px;
+                color: $chrome-text;
+            }
+
+            &:hover {
+                background: $chrome-bg-hover;
+                color: $chrome-text-active;
+                border-color: rgba(255, 255, 255, 0.15);
+            }
+        }
     }
 }
 
@@ -45,9 +118,13 @@
 // ============================================
 .sidebar {
     width: $sidebar-width-expanded;
-    border-right: $border-width solid $color-border;
-    background: $color-bg-primary;
     transition: width $transition-normal;
+    border-right: none !important;
+
+    &.dark {
+        background: $chrome-bg;
+        border-right: 1px solid $chrome-border !important;
+    }
 
     &.collapsed {
         width: $sidebar-width-collapsed;
@@ -63,63 +140,103 @@
     }
 
     mat-nav-list {
-        padding-top: $spacing-md;
+        padding-top: $spacing-sm;
 
         a {
             display: flex;
             align-items: center;
-            height: 48px;
-            padding: 0 $spacing-lg;
-            color: $color-text-secondary;
+            height: 44px;
+            padding: 0 $spacing-md;
+            color: $chrome-text;
             text-decoration: none;
             transition: all $transition-fast;
             position: relative;
             border-radius: 0;
+            margin: 1px 0;
 
             mat-icon {
                 margin-right: $spacing-md;
-                color: $color-text-secondary;
+                color: $chrome-text;
+                font-size: 20px;
                 transition: color $transition-fast;
+                flex-shrink: 0;
             }
 
             span {
-                font-size: $font-size-base;
+                font-size: $font-size-sm;
                 font-weight: $font-weight-medium;
                 white-space: nowrap;
                 overflow: hidden;
             }
 
             &:hover {
-                background-color: $color-bg-hover;
-                color: $color-text-primary;
+                background-color: $chrome-bg-hover;
+                color: $chrome-text-hover;
 
                 mat-icon {
-                    color: $color-text-primary;
+                    color: $chrome-text-hover;
                 }
             }
 
             &.active {
-                background-color: $color-bg-selected;
-                color: $color-info;
+                background-color: $chrome-bg-active;
+                color: $chrome-text-active;
                 font-weight: $font-weight-semibold;
 
                 mat-icon {
-                    color: $color-info;
+                    color: $chrome-accent;
                 }
 
-                // Active indicator (3px left border)
                 &::before {
                     content: '';
                     position: absolute;
                     left: 0;
-                    top: 0;
-                    bottom: 0;
+                    top: 6px;
+                    bottom: 6px;
                     width: 3px;
-                    background-color: $color-info;
+                    background-color: $chrome-accent;
+                    border-radius: 0 2px 2px 0;
+                }
+            }
+
+            &.nav-fraud {
+                mat-icon {
+                    color: $chrome-accent-amber;
+                }
+
+                &.active {
+                    mat-icon {
+                        color: $chrome-accent-amber;
+                    }
+
+                    &::before {
+                        background-color: $chrome-accent-amber;
+                    }
                 }
             }
         }
     }
+}
+
+// ============================================
+// SIDEBAR NAV DIVIDERS
+// ============================================
+.nav-divider {
+    padding: $spacing-lg $spacing-md $spacing-xs;
+
+    span {
+        font-size: 10px;
+        font-weight: $font-weight-semibold;
+        letter-spacing: 0.8px;
+        color: rgba(148, 163, 184, 0.5);
+        text-transform: uppercase;
+    }
+}
+
+.nav-divider-line {
+    height: 1px;
+    background: $chrome-border;
+    margin: $spacing-sm $spacing-md;
 }
 
 // ============================================

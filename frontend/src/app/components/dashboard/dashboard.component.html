@@ -1,0 +1,142 @@
+<div class="dashboard">
+  <div class="page-header">
+    <div class="header-text">
+      <h1>Operations Dashboard</h1>
+      <p class="subtitle">Live queue · {{ recentCases.length }} open cases · {{ heldCount }} fraud holds</p>
+    </div>
+    <div class="header-actions">
+      <a mat-stroked-button routerLink="/fraud-review" class="btn-fraud">
+        <mat-icon>gpp_bad</mat-icon>
+        Review Fraud Holds
+      </a>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <mat-spinner diameter="32"></mat-spinner>
+    <span>Loading dashboard…</span>
+  </div>
+
+  <div *ngIf="!loading">
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card fraud">
+        <div class="kpi-icon-wrap">
+          <mat-icon>gpp_bad</mat-icon>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ heldCount }}</div>
+          <div class="kpi-label">Fraud Holds</div>
+          <div class="kpi-sub">Awaiting review</div>
+        </div>
+        <a routerLink="/fraud-review" class="kpi-action">Review <mat-icon>arrow_forward</mat-icon></a>
+      </div>
+
+      <div class="kpi-card cases">
+        <div class="kpi-icon-wrap">
+          <mat-icon>support_agent</mat-icon>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ kpis?.openCases ?? '—' }}</div>
+          <div class="kpi-label">Open Cases</div>
+          <div class="kpi-sub">{{ kpis?.unassignedCases ?? 0 }} unassigned</div>
+        </div>
+        <a routerLink="/cases" class="kpi-action">View all <mat-icon>arrow_forward</mat-icon></a>
+      </div>
+
+      <div class="kpi-card sla">
+        <div class="kpi-icon-wrap">
+          <mat-icon>timer</mat-icon>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ kpis?.slaAtRiskCases ?? '—' }}</div>
+          <div class="kpi-label">SLA at Risk</div>
+          <div class="kpi-sub">Less than 4h remaining</div>
+        </div>
+        <a routerLink="/cases" class="kpi-action">Prioritize <mat-icon>arrow_forward</mat-icon></a>
+      </div>
+
+      <div class="kpi-card high">
+        <div class="kpi-icon-wrap">
+          <mat-icon>priority_high</mat-icon>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-value">{{ kpis?.highSeverityCases ?? '—' }}</div>
+          <div class="kpi-label">High Severity</div>
+          <div class="kpi-sub">{{ kpis?.unassignedHighSeverity ?? 0 }} unowned</div>
+        </div>
+        <a routerLink="/cases" class="kpi-action">View <mat-icon>arrow_forward</mat-icon></a>
+      </div>
+    </div>
+
+    <!-- Two-column content -->
+    <div class="content-grid">
+      <!-- Fraud Holds Feed -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <mat-icon class="amber">gpp_bad</mat-icon>
+            <h2>Recent Fraud Holds</h2>
+          </div>
+          <a routerLink="/fraud-review" class="panel-link">See all</a>
+        </div>
+
+        <div *ngIf="heldTransactions.length === 0" class="empty-state">
+          <mat-icon>check_circle</mat-icon>
+          <span>No fraud holds — all clear</span>
+        </div>
+
+        <div class="feed">
+          <div *ngFor="let tx of heldTransactions" class="feed-item fraud-item">
+            <div class="feed-icon-wrap amber">
+              <mat-icon>block</mat-icon>
+            </div>
+            <div class="feed-body">
+              <div class="feed-title">
+                {{ tx.description || tx.type }}
+                <span class="amount-tag">{{ formatAmount(tx.amount) }}</span>
+              </div>
+              <div class="feed-meta">
+                Account #{{ tx.accountId }} &middot; corr {{ tx.correlationId?.slice(0, 8) }}…
+              </div>
+            </div>
+            <div class="feed-time">{{ timeAgo(tx.createdAt) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Case Queue -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <mat-icon class="blue">support_agent</mat-icon>
+            <h2>Case Queue</h2>
+          </div>
+          <a routerLink="/cases" class="panel-link">See all</a>
+        </div>
+
+        <div *ngIf="recentCases.length === 0" class="empty-state">
+          <mat-icon>inbox</mat-icon>
+          <span>No open cases</span>
+        </div>
+
+        <div class="feed">
+          <div *ngFor="let c of recentCases" class="feed-item case-item">
+            <div class="feed-icon-wrap" [ngClass]="c.severity.toLowerCase()">
+              <mat-icon>{{ c.severity === 'HIGH' || c.severity === 'CRITICAL' ? 'warning' : 'info' }}</mat-icon>
+            </div>
+            <div class="feed-body">
+              <div class="feed-title truncate">{{ c.summary }}</div>
+              <div class="feed-meta">
+                Case #{{ c.id }} &middot;
+                <span [ngClass]="'sev-' + c.severity.toLowerCase()">{{ c.severity }}</span>
+                <span *ngIf="!c.assignedTo" class="unassigned-badge">Unassigned</span>
+              </div>
+            </div>
+            <div class="feed-time">{{ timeAgo(c.createdAt) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

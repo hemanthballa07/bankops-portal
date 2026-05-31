@@ -1,10 +1,28 @@
 import { Component, Inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatButtonModule } from '@angular/material/button';
 import { HttpClient } from '@angular/common/http';
 import { CaseTimelineEventDto, CaseSnapshotDto, EventType } from '../../models/timeline.model';
 
 @Component({
     selector: 'app-case-timeline',
+    standalone: true,
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatDialogModule,
+        MatIconModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        MatProgressSpinnerModule,
+        MatButtonModule,
+    ],
     templateUrl: './case-timeline.component.html',
     styleUrls: ['./case-timeline.component.scss']
 })

@@ -112,6 +112,26 @@
     background-color: #f8d7da;
     color: #721c24;
   }
+
+  &.status-held {
+    background-color: #fff3e0;
+    color: #e65100;
+    border: 1px solid #ffcc02;
+  }
+
+  &.status-released {
+    background-color: #e8f5e9;
+    color: #1b5e20;
+  }
+
+  &.status-rejected {
+    background-color: #fce4ec;
+    color: #880e4f;
+  }
+}
+
+.held-row {
+  background-color: #fffde7;
 }
 
 

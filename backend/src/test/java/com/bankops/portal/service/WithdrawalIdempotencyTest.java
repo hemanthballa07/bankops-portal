@@ -6,6 +6,7 @@ import com.bankops.portal.entity.Account;
 import com.bankops.portal.entity.Customer;
 import com.bankops.portal.entity.Transaction;
 import com.bankops.portal.repository.AccountRepository;
+import com.bankops.portal.repository.CustomerRepository;
 import com.bankops.portal.repository.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -45,6 +46,9 @@ class WithdrawalIdempotencyTest {
     private AccountRepository accountRepository;
 
     @Autowired
+    private CustomerRepository customerRepository;
+
+    @Autowired
     private TransactionRepository transactionRepository;
 
     private Account testAccount;
@@ -53,9 +57,10 @@ class WithdrawalIdempotencyTest {
     @BeforeEach
     @Transactional
     void setUp() {
-        // Clean up
+        // Clean up in FK order: transactions → accounts → customers
         transactionRepository.deleteAll();
         accountRepository.deleteAll();
+        customerRepository.deleteAll();
 
         // Create test customer and account
         testCustomer = Customer.builder()
@@ -64,6 +69,7 @@ class WithdrawalIdempotencyTest {
                 .email("test@example.com")
                 .phone("555-0000")
                 .build();
+        testCustomer = customerRepository.save(testCustomer);
 
         testAccount = Account.builder()
                 .customer(testCustomer)

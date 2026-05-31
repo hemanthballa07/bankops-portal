@@ -11,9 +11,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -30,41 +30,29 @@ import static org.mockito.Mockito.*;
  * Deterministic unit tests for SLA Service using Clock injection.
  */
 @ExtendWith(MockitoExtension.class)
-    //@Mock
-    //private SlaConfiguration slaConfiguration;
+class SlaServiceTest {
 
-    //@Mock
+    private static final Instant BASE_TIME = Instant.parse("2026-01-01T00:00:00Z");
+
     private SlaStatusChangeEventRepository slaEventRepository;
-
-    //@InjectMocks
-    private SlaService slaService;
-    
     private SlaConfiguration slaConfiguration;
-    //@InjectMocks
     private SlaService slaService;
-
     private Clock fixedClock;
     private SupportCase testCase;
+
     @BeforeEach
     void setUp() {
         fixedClock = Clock.fixed(BASE_TIME, ZoneId.systemDefault());
-        
-        // Use real SlaConfiguration instead of mock
+
         slaConfiguration = new SlaConfiguration();
+        ReflectionTestUtils.setField(slaConfiguration, "atRiskThreshold", 0.8);
         slaEventRepository = mock(SlaStatusChangeEventRepository.class);
-        
-        // Create service with fixed clock
+
         slaService = new SlaService(slaConfiguration, slaEventRepository, fixedClock);
 
         testCase = SupportCase.builder()
                 .id(1L)
                 .state(CaseState.NEW)
-                .severity(SupportCase.CaseSeverity.HIGH)
-                .summary("Test case")
-                .correlationId("test-123")
-                .createdAt(LocalDateTime.now(fixedClock))
-                .build();
-    }
                 .severity(SupportCase.CaseSeverity.HIGH)
                 .summary("Test case")
                 .correlationId("test-123")

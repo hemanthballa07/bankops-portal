@@ -33,7 +33,7 @@ public class AuditEventService {
      * @param newValue    New state (will be serialized to JSON)
      * @param performedBy User/role/correlationId that performed the action
      */
-    @Transactional(propagation = Propagation.MANDATORY, rollbackFor = Exception.class)
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void recordEvent(
             AuditEvent.EntityType entityType,
             Long entityId,

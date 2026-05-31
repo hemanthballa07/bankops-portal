@@ -97,6 +97,7 @@ class TransactionResilienceTest {
                 // configured otherwise in test
                 String response = mockMvc.perform(post("/accounts/{accountId}/transactions", account.getId())
                                 .contentType(MediaType.APPLICATION_JSON)
+                                .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated()) // Should still be 201 Created
                                 .andReturn()

@@ -146,8 +146,29 @@
             <td mat-cell *matCellDef="let transaction">{{ transaction.createdAt | date:'short' }}</td>
           </ng-container>
 
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let transaction">
+              <ng-container *ngIf="transaction.status === 'HELD'">
+                <button mat-icon-button color="primary"
+                  [disabled]="reviewingTransactionId === transaction.id"
+                  matTooltip="Release — approve withdrawal and debit account"
+                  (click)="releaseHeld(transaction)">
+                  <mat-icon>check_circle</mat-icon>
+                </button>
+                <button mat-icon-button color="warn"
+                  [disabled]="reviewingTransactionId === transaction.id"
+                  matTooltip="Reject — deny withdrawal, no balance change"
+                  (click)="rejectHeld(transaction)">
+                  <mat-icon>cancel</mat-icon>
+                </button>
+              </ng-container>
+            </td>
+          </ng-container>
+
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            [class.held-row]="row.status === 'HELD'"></tr>
         </table>
 
         <!-- Pagination -->

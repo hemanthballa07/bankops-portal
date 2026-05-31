@@ -1,0 +1,294 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.fraud-review {
+    padding: $spacing-xl;
+    max-width: $page-max-width;
+}
+
+// ============================================
+// PAGE HEADER
+// ============================================
+.page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: $spacing-lg;
+
+    .title-row {
+        display: flex;
+        align-items: center;
+        gap: $spacing-sm;
+        margin-bottom: 4px;
+
+        .header-icon {
+            font-size: 24px;
+            color: $color-warning;
+        }
+
+        h1 {
+            font-size: $font-size-2xl;
+            font-weight: $font-weight-bold;
+            color: $color-text-primary;
+            margin: 0;
+        }
+
+        .count-badge {
+            font-size: $font-size-sm;
+            font-weight: $font-weight-semibold;
+            color: $color-warning;
+            background: rgba($color-warning, 0.12);
+            border: 1px solid rgba($color-warning, 0.3);
+            padding: 2px 10px;
+            border-radius: $border-radius-full;
+        }
+    }
+
+    .subtitle {
+        font-size: $font-size-sm;
+        color: $color-text-secondary;
+        margin: 0;
+    }
+}
+
+// ============================================
+// BATCH ACTION BAR
+// ============================================
+.batch-bar {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    padding: $spacing-sm $spacing-lg;
+    background: rgba($color-info, 0.06);
+    border: 1px solid rgba($color-info, 0.2);
+    border-radius: $border-radius-lg;
+    margin-bottom: $spacing-md;
+
+    .batch-count {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-semibold;
+        color: $color-info;
+        flex: 1;
+    }
+
+    .batch-actions {
+        display: flex;
+        gap: $spacing-sm;
+    }
+
+    .btn-release {
+        color: $color-success;
+        border-color: rgba($color-success, 0.4);
+
+        mat-icon { font-size: 16px; }
+
+        &:hover { background: rgba($color-success, 0.06); }
+    }
+
+    .btn-reject {
+        color: $color-error;
+        border-color: rgba($color-error, 0.4);
+
+        mat-icon { font-size: 16px; }
+
+        &:hover { background: rgba($color-error, 0.06); }
+    }
+}
+
+// ============================================
+// LOADING / EMPTY
+// ============================================
+.loading-state {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    color: $color-text-secondary;
+    padding: $spacing-2xl;
+    justify-content: center;
+}
+
+.empty-state {
+    text-align: center;
+    padding: $spacing-2xl;
+    color: $color-text-secondary;
+
+    mat-icon {
+        font-size: 48px;
+        color: $color-success;
+        display: block;
+        margin-bottom: $spacing-md;
+    }
+
+    h2 {
+        font-size: $font-size-xl;
+        font-weight: $font-weight-semibold;
+        color: $color-text-primary;
+        margin: 0 0 $spacing-sm;
+    }
+
+    p {
+        font-size: $font-size-sm;
+        margin: 0 0 $spacing-lg;
+    }
+}
+
+// ============================================
+// TABLE
+// ============================================
+.table-wrapper {
+    background: $color-bg-primary;
+    border: $border-width solid $color-border;
+    border-radius: $border-radius-xl;
+    overflow: hidden;
+}
+
+.fraud-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: $font-size-sm;
+
+    thead tr {
+        background: $color-bg-secondary;
+
+        th {
+            padding: $spacing-sm $spacing-md;
+            text-align: left;
+            font-size: $font-size-xs;
+            font-weight: $font-weight-semibold;
+            color: $color-text-secondary;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: $border-width solid $color-border;
+            white-space: nowrap;
+        }
+    }
+
+    tbody tr {
+        border-bottom: $border-width solid $color-border;
+        transition: background $transition-fast;
+
+        &:last-child { border-bottom: none; }
+
+        &:hover { background: $color-bg-hover; }
+
+        &.selected { background: rgba($color-info, 0.04); }
+
+        &.actioning { opacity: 0.6; pointer-events: none; }
+
+        td {
+            padding: $spacing-sm $spacing-md;
+            color: $color-text-primary;
+            vertical-align: middle;
+        }
+    }
+}
+
+// ============================================
+// COLUMN SPECIFICS
+// ============================================
+.col-check {
+    width: 40px;
+    padding-right: 0 !important;
+}
+
+.col-right { text-align: right; }
+
+.col-actions {
+    width: 96px;
+    text-align: right;
+}
+
+.col-desc {
+    max-width: 200px;
+}
+
+.col-corr { font-family: $font-family-mono; }
+
+.col-age {
+    color: $color-text-secondary !important;
+    white-space: nowrap;
+}
+
+// ============================================
+// CELL CONTENT
+// ============================================
+.tx-id {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+
+    .id-badge {
+        font-size: $font-size-xs;
+        color: $color-text-secondary;
+        font-family: $font-family-mono;
+    }
+
+    .tx-type {
+        font-size: $font-size-xs;
+        font-weight: $font-weight-semibold;
+        padding: 1px 6px;
+        border-radius: $border-radius-sm;
+
+        &.deposit {
+            color: $color-info;
+            background: rgba($color-info, 0.1);
+        }
+
+        &.withdrawal {
+            color: $color-warning;
+            background: rgba($color-warning, 0.1);
+        }
+    }
+}
+
+.account-link {
+    color: $color-info;
+    text-decoration: none;
+    font-weight: $font-weight-medium;
+    font-size: $font-size-xs;
+
+    &:hover { text-decoration: underline; }
+}
+
+.amount {
+    font-weight: $font-weight-semibold;
+    color: $color-warning;
+}
+
+.description {
+    @include truncate;
+    display: block;
+    max-width: 180px;
+    color: $color-text-secondary;
+}
+
+.corr-id {
+    font-size: $font-size-xs;
+    color: $color-text-tertiary;
+    cursor: default;
+}
+
+// ============================================
+// ROW ACTIONS
+// ============================================
+.row-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+
+    .btn-release {
+        color: $color-success;
+        &:hover { background: rgba($color-success, 0.1); }
+    }
+
+    .btn-reject {
+        color: $color-error;
+        &:hover { background: rgba($color-error, 0.1); }
+    }
+}
+
+.row-spinner {
+    display: flex;
+    justify-content: flex-end;
+    padding-right: $spacing-sm;
+}

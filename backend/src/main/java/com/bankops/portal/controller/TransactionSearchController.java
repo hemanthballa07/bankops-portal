@@ -1,14 +1,17 @@
 package com.bankops.portal.controller;
 
 import com.bankops.portal.dto.TransactionDto;
+import com.bankops.portal.entity.Transaction;
 import com.bankops.portal.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 @RestController
@@ -20,6 +23,15 @@ public class TransactionSearchController {
     private static final Pattern UUID_PATTERN = Pattern.compile(
             "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
             Pattern.CASE_INSENSITIVE);
+
+    @GetMapping
+    public ResponseEntity<List<TransactionDto>> search(@RequestParam(required = false) String status) {
+        if (status != null && !status.isBlank()) {
+            Transaction.TransactionStatus txStatus = Transaction.TransactionStatus.valueOf(status.toUpperCase());
+            return ResponseEntity.ok(transactionService.getTransactionsByStatus(txStatus));
+        }
+        return ResponseEntity.ok(List.of());
+    }
 
     @GetMapping("/by-correlation/{correlationId}")
     public ResponseEntity<TransactionDto> getTransactionByCorrelationId(@PathVariable String correlationId) {

@@ -1,0 +1,115 @@
+<div class="fraud-review">
+  <div class="page-header">
+    <div class="header-text">
+      <div class="title-row">
+        <mat-icon class="header-icon">gpp_bad</mat-icon>
+        <h1>Fraud Review Center</h1>
+        <span class="count-badge" *ngIf="!loading">{{ rows.length }}</span>
+      </div>
+      <p class="subtitle">HELD transactions awaiting ops review · Release to complete, reject to void</p>
+    </div>
+    <div class="header-actions">
+      <button mat-icon-button (click)="load()" matTooltip="Refresh" [disabled]="loading">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Batch Action Bar -->
+  <div class="batch-bar" *ngIf="selectedRows.length > 0">
+    <span class="batch-count">{{ selectedRows.length }} selected</span>
+    <div class="batch-actions">
+      <button mat-stroked-button class="btn-release" (click)="batchRelease()" [disabled]="batchActioning">
+        <mat-icon>check_circle</mat-icon>
+        Release all
+      </button>
+      <button mat-stroked-button class="btn-reject" (click)="batchReject()" [disabled]="batchActioning">
+        <mat-icon>cancel</mat-icon>
+        Reject all
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-state">
+    <mat-spinner diameter="32"></mat-spinner>
+    <span>Loading fraud holds…</span>
+  </div>
+
+  <!-- Empty -->
+  <div *ngIf="!loading && rows.length === 0" class="empty-state">
+    <mat-icon>verified_user</mat-icon>
+    <h2>No fraud holds</h2>
+    <p>All HELD transactions have been reviewed. Queue is clear.</p>
+    <a mat-button routerLink="/dashboard">Back to Dashboard</a>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading && rows.length > 0" class="table-wrapper">
+    <table class="fraud-table">
+      <thead>
+        <tr>
+          <th class="col-check">
+            <mat-checkbox
+              [checked]="allSelected"
+              [indeterminate]="someSelected"
+              (change)="toggleAll($event.checked)">
+            </mat-checkbox>
+          </th>
+          <th>Transaction</th>
+          <th>Account</th>
+          <th class="col-right">Amount</th>
+          <th>Description</th>
+          <th>Correlation ID</th>
+          <th>Age</th>
+          <th class="col-actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of rows" [class.selected]="row.selected" [class.actioning]="row.actioning">
+          <td class="col-check">
+            <mat-checkbox [(ngModel)]="row.selected" (click)="$event.stopPropagation()"></mat-checkbox>
+          </td>
+          <td>
+            <div class="tx-id">
+              <span class="id-badge">{{ row.id }}</span>
+              <span class="tx-type" [ngClass]="row.type.toLowerCase()">{{ row.type }}</span>
+            </div>
+          </td>
+          <td>
+            <a [routerLink]="['/accounts', row.accountId]" class="account-link">
+              ACC-{{ row.accountId }}
+            </a>
+          </td>
+          <td class="col-right">
+            <span class="amount">{{ formatAmount(row.amount) }}</span>
+          </td>
+          <td class="col-desc">
+            <span class="description" [matTooltip]="row.description || ''">
+              {{ row.description || '—' }}
+            </span>
+          </td>
+          <td class="col-corr">
+            <span class="corr-id" [matTooltip]="row.correlationId">
+              {{ row.correlationId?.slice(0, 8) }}…
+            </span>
+          </td>
+          <td class="col-age">{{ timeAgo(row.createdAt) }}</td>
+          <td class="col-actions">
+            <div *ngIf="row.actioning" class="row-spinner">
+              <mat-spinner diameter="18"></mat-spinner>
+            </div>
+            <div *ngIf="!row.actioning" class="row-actions">
+              <button mat-icon-button class="btn-release" (click)="release(row)" matTooltip="Release transaction">
+                <mat-icon>check_circle_outline</mat-icon>
+              </button>
+              <button mat-icon-button class="btn-reject" (click)="reject(row)" matTooltip="Reject transaction">
+                <mat-icon>cancel</mat-icon>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

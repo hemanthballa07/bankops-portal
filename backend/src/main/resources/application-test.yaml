@@ -1,0 +1,11 @@
+# Test overlay — default to disabled so legacy integration tests do not need a
+# running Fluxa. Tests that exercise the gate (FraudGateIntegrationTest) override
+# via @SpringBootTest(properties = "bankops.fluxa.enabled=true") and provide an
+# in-process channel via a @TestConfiguration. Failure-mode policy fail-closed
+# both directions so explicit Unavailable scenarios get deterministic 503s.
+bankops:
+  fluxa:
+    enabled: false
+    shadow-mode: false
+    withdrawal: FAIL_CLOSED
+    deposit: FAIL_CLOSED

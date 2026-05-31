@@ -71,9 +71,9 @@
     </div>
 
     <!-- Replay Snapshot Panel -->
-    <div class="replay-panel" *ngIf="replaySnapshot">
+    <div class="replay-panel" *ngIf="replaySnapshot as snap">
         <div class="replay-header">
-            <h3>Snapshot at {{ formatTimestamp(replaySnapshot.snapshotAt) }}</h3>
+            <h3>Snapshot at {{ formatTimestamp(snap.snapshotAt ?? '') }}</h3>
             <button mat-icon-button (click)="closeReplay()">
                 <mat-icon>close</mat-icon>
             </button>
@@ -82,35 +82,35 @@
         <div class="replay-content">
             <div class="snapshot-field">
                 <label>State:</label>
-                <span>{{ replaySnapshot.state }}</span>
+                <span>{{ snap.state }}</span>
             </div>
 
-            <div class="snapshot-field" *ngIf="replaySnapshot.assigneeName">
+            <div class="snapshot-field" *ngIf="snap.assigneeName">
                 <label>Assignee:</label>
-                <span>{{ replaySnapshot.assigneeName }} (ID: {{ replaySnapshot.assigneeId }})</span>
+                <span>{{ snap.assigneeName }} (ID: {{ snap.assigneeId }})</span>
             </div>
 
-            <div class="snapshot-field" *ngIf="!replaySnapshot.assigneeName">
+            <div class="snapshot-field" *ngIf="!snap.assigneeName">
                 <label>Assignee:</label>
                 <span class="unassigned">Unassigned</span>
             </div>
 
-            <div class="snapshot-field" *ngIf="replaySnapshot.slaStatus">
+            <div class="snapshot-field" *ngIf="snap.slaStatus">
                 <label>SLA Status:</label>
-                <span [class.sla-breached]="replaySnapshot.slaStatus === 'BREACHED'"
-                    [class.sla-at-risk]="replaySnapshot.slaStatus === 'AT_RISK'">
-                    {{ replaySnapshot.slaStatus }}
+                <span [class.sla-breached]="snap.slaStatus === 'BREACHED'"
+                    [class.sla-at-risk]="snap.slaStatus === 'AT_RISK'">
+                    {{ snap.slaStatus }}
                 </span>
             </div>
 
-            <div class="snapshot-field" *ngIf="replaySnapshot.severity">
+            <div class="snapshot-field" *ngIf="snap.severity">
                 <label>Severity:</label>
-                <span>{{ replaySnapshot.severity }}</span>
+                <span>{{ snap.severity }}</span>
             </div>
 
-            <div class="snapshot-field" *ngIf="replaySnapshot.createdAt">
+            <div class="snapshot-field" *ngIf="snap.createdAt">
                 <label>Created:</label>
-                <span>{{ formatTimestamp(replaySnapshot.createdAt) }}</span>
+                <span>{{ formatTimestamp(snap.createdAt ?? '') }}</span>
             </div>
         </div>
     </div>

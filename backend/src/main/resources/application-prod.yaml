@@ -1,0 +1,10 @@
+# Prod overlay — endpoint via env var; fail-open deposits, fail-closed withdrawals
+# per the trifecta integration spec.
+bankops:
+  fluxa:
+    enabled: true
+    shadow-mode: ${BANKOPS_FLUXA_SHADOWMODE:false}
+    host: ${FLUXA_FRAUD_HOST}
+    port: ${FLUXA_FRAUD_PORT:9095}
+    withdrawal: FAIL_CLOSED
+    deposit: FAIL_OPEN

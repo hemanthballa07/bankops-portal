@@ -7,6 +7,7 @@ import com.bankops.portal.entity.Account;
 import com.bankops.portal.entity.Customer;
 import com.bankops.portal.repository.AccountRepository;
 import com.bankops.portal.repository.CustomerRepository;
+import com.bankops.portal.service.AuditEventService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,9 @@ class AccountServiceTest {
 
     @Mock
     private CustomerRepository customerRepository;
+
+    @Mock
+    private AuditEventService auditEventService;
 
     @InjectMocks
     private AccountService accountService;
@@ -71,7 +75,7 @@ class AccountServiceTest {
     void testCreateAccount_Checking_Success() {
         // Arrange
         CreateAccountRequest request = new CreateAccountRequest();
-        request.setType("CHECKING");
+        request.setType("CHEQUING");
 
         when(customerRepository.findById(1L)).thenReturn(Optional.of(testCustomer));
         when(accountRepository.save(any(Account.class))).thenAnswer(invocation -> {
@@ -86,7 +90,7 @@ class AccountServiceTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals("CHECKING", result.getType());
+        assertEquals("CHEQUING", result.getType());
         assertEquals("OPEN", result.getStatus());
         assertEquals(BigDecimal.ZERO, result.getBalance());
         assertFalse(result.getOverdraftEnabled());
@@ -172,7 +176,7 @@ class AccountServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals(100L, result.getId());
-        assertEquals("CHECKING", result.getType());
+        assertEquals("CHEQUING", result.getType());
         verify(accountRepository).findById(100L);
     }
 
@@ -211,7 +215,7 @@ class AccountServiceTest {
         // Assert
         assertNotNull(results);
         assertEquals(2, results.size());
-        assertEquals("CHECKING", results.get(0).getType());
+        assertEquals("CHEQUING", results.get(0).getType());
         assertEquals("SAVINGS", results.get(1).getType());
     }
 

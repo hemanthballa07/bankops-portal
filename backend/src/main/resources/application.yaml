@@ -38,6 +38,20 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{correlationId}] %logger{36} - %msg%n"
 
+# Fluxa fraud-eval gRPC client (see com.bankops.portal.config.FluxaProperties).
+# Defaults: feature-flag off, shadow-mode on, FAIL_CLOSED withdrawal /
+# FAIL_OPEN deposit. Profile overlays in application-{local,test,prod}.yaml
+# override these.
+bankops:
+  fluxa:
+    enabled: false
+    shadow-mode: true
+    host: localhost
+    port: 9095
+    deadline: PT0.3S
+    withdrawal: FAIL_CLOSED
+    deposit: FAIL_OPEN
+
 management:
   endpoints:
     web:

@@ -68,7 +68,7 @@ class TimelineServiceTest {
     void testMergesEventsFromAllSources() {
         // Given: events from all 3 sources
         StateTransitionEvent stateEvent = createStateEvent(1L, T1, "NEW", "ASSIGNED");
-        com.bankops.portal.entity.SlaStatusChangeEvent slaEvent = createSlaEvent(2L, T2, "ON_TRACK", "AT_RISK");
+        com.bankops.portal.entity.SlaStatusChangeEvent slaEvent = createSlaEvent(2L, T2, SlaStatus.ON_TRACK, SlaStatus.AT_RISK);
         AssignmentEvent assignEvent = createAssignmentEvent(3L, T3, null, 1L);
 
         when(stateTransitionRepository.findByCaseIdOrderByTimestampDesc(CASE_ID))
@@ -144,7 +144,7 @@ class TimelineServiceTest {
     void testFilterByEventType() {
         // Given: mixed event types
         StateTransitionEvent stateEvent = createStateEvent(1L, T1, "NEW", "ASSIGNED");
-        com.bankops.portal.entity.SlaStatusChangeEvent slaEvent = createSlaEvent(2L, T2, "ON_TRACK", "AT_RISK");
+        com.bankops.portal.entity.SlaStatusChangeEvent slaEvent = createSlaEvent(2L, T2, SlaStatus.ON_TRACK, SlaStatus.AT_RISK);
 
         when(stateTransitionRepository.findByCaseIdOrderByTimestampDesc(CASE_ID))
                 .thenReturn(List.of(stateEvent));
@@ -265,7 +265,7 @@ class TimelineServiceTest {
     @Test
     void testSlaEventMappingWithBreachWarning() {
         // Given
-        com.bankops.portal.entity.SlaStatusChangeEvent event = createSlaEvent(1L, T1, "AT_RISK", "BREACHED");
+        com.bankops.portal.entity.SlaStatusChangeEvent event = createSlaEvent(1L, T1, SlaStatus.AT_RISK, SlaStatus.BREACHED);
         event.setActor("SYSTEM");
         event.setCorrelationId("xyz-789");
 
@@ -386,7 +386,7 @@ class TimelineServiceTest {
     }
 
     private com.bankops.portal.entity.SlaStatusChangeEvent createSlaEvent(Long id, LocalDateTime timestamp,
-            String prevStatus, String newStatus) {
+            SlaStatus prevStatus, SlaStatus newStatus) {
         return com.bankops.portal.entity.SlaStatusChangeEvent.builder()
                 .id(id)
                 .caseId(CASE_ID)

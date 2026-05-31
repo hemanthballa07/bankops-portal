@@ -97,9 +97,10 @@ public class TimelineService {
         SupportCase currentCase = caseRepository.findById(caseId)
                 .orElseThrow(() -> new IllegalArgumentException("Case not found: " + caseId));
 
-        // Get all events up to timestamp, sorted chronologically (ascending)
+        // Get all events up to and including timestamp (plusNanos(1) makes the exclusive
+        // isBefore filter inclusive of the exact replay point)
         TimelineFilter filter = TimelineFilter.builder()
-                .toTimestamp(timestamp)
+                .toTimestamp(timestamp.plusNanos(1))
                 .pageSize(Integer.MAX_VALUE)
                 .build();
 
@@ -162,14 +163,17 @@ public class TimelineService {
 
     private CaseTimelineEventDto convertSlaEvent(com.bankops.portal.entity.SlaStatusChangeEvent event) {
         Map<String, Object> details = new HashMap<>();
-        details.put("previousStatus", event.getPreviousStatus());
-        details.put("newStatus", event.getNewStatus());
+        details.put("previousStatus", event.getPreviousStatus() != null ? event.getPreviousStatus().name() : null);
+        details.put("newStatus", event.getNewStatus() != null ? event.getNewStatus().name() : null);
 
-        String summary = String.format("SLA status changed to %s", event.getNewStatus());
-        if (event.getNewStatus() != null && event.getNewStatus().equals(SlaStatus.BREACHED.name())) {
+        SlaStatus newStatus = event.getNewStatus();
+        String summary;
+        if (newStatus == SlaStatus.BREACHED) {
             summary = "⚠️ SLA BREACHED";
-        } else if (event.getNewStatus() != null && event.getNewStatus().equals(SlaStatus.AT_RISK.name())) {
+        } else if (newStatus == SlaStatus.AT_RISK) {
             summary = "⚠️ SLA at risk";
+        } else {
+            summary = String.format("SLA status changed to %s", newStatus);
         }
 
         return CaseTimelineEventDto.builder()

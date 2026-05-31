@@ -125,6 +125,19 @@ $header-height: 64px;
 $page-max-width: 1600px;
 
 // ============================================
+// DARK CHROME (sidebar + brand bar)
+// ============================================
+$chrome-bg: #0F172A;
+$chrome-bg-hover: rgba(255, 255, 255, 0.06);
+$chrome-bg-active: rgba(59, 130, 246, 0.14);
+$chrome-text: #94A3B8;
+$chrome-text-hover: #CBD5E1;
+$chrome-text-active: #F8FAFC;
+$chrome-border: rgba(255, 255, 255, 0.08);
+$chrome-accent: #3B82F6;
+$chrome-accent-amber: #F59E0B;
+
+// ============================================
 // Z-INDEX
 // ============================================
 $z-index-dropdown: 1000;

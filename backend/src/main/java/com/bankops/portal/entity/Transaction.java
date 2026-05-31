@@ -71,7 +71,7 @@ public class Transaction {
     }
 
     public enum TransactionStatus {
-        PENDING, COMPLETED, FAILED
+        PENDING, COMPLETED, FAILED, HELD, RELEASED, REJECTED
     }
 
     public enum TransactionCategory {
