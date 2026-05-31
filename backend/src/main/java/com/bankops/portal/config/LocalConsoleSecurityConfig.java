@@ -23,7 +23,8 @@ public class LocalConsoleSecurityConfig {
             .securityMatcher(
                 "/transactions/**",
                 "/cases/**",
-                "/accounts/**"
+                "/accounts/*/transactions/*/release",
+                "/accounts/*/transactions/*/reject"
             )
             .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
             .csrf(csrf -> csrf.disable());
