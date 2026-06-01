@@ -20,10 +20,10 @@
 // TABLE STYLES
 // ============================================
 .table-container {
-  border-radius: $border-radius-md;
-  box-shadow: $elevation-xs;
+  border: $border-width solid $color-border;
+  border-radius: $border-radius-xl;
   overflow: hidden;
-  background: white;
+  background: $color-bg-primary;
 
   table {
     width: 100%;
@@ -161,7 +161,7 @@
   right: 0;
   bottom: 0;
   width: 400px;
-  background: white;
+  background: $color-bg-primary;
   border-left: $border-width solid $color-border;
   box-shadow: $elevation-lg;
   transform: translateX(100%);
@@ -243,10 +243,10 @@
   min-height: 100%;
 
   .add-note {
-    background: white;
+    background: $color-bg-primary;
     padding: $spacing-md;
     border-radius: $border-radius-md;
-    box-shadow: $elevation-xs;
+    border: $border-width solid $color-border;
     margin-bottom: $spacing-lg;
   }
 
@@ -256,10 +256,10 @@
     gap: $spacing-md;
 
     .note-item {
-      background: white;
+      background: $color-bg-primary;
       padding: $spacing-md;
       border-radius: $border-radius-md;
-      box-shadow: $elevation-xs;
+      border: $border-width solid $color-border;
 
       .note-header {
         display: flex;
@@ -307,6 +307,9 @@
 // CREATE FORM
 // ============================================
 .create-case-card {
+  background: $color-bg-primary;
+  border: $border-width solid $color-border;
+  border-radius: $border-radius-xl;
   margin-bottom: $spacing-lg;
   animation: slideDown $transition-normal;
 
