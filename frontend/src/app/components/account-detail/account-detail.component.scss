@@ -1,16 +1,19 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
 .account-detail-container {
-  padding: 20px;
+  padding: $spacing-lg;
   max-width: 1200px;
   margin: 0 auto;
 }
 
 .account-info {
-  margin-bottom: 20px;
+  margin-bottom: $spacing-lg;
 }
 
 .account-details {
   display: flex;
-  gap: 24px;
+  gap: $spacing-lg;
   flex-wrap: wrap;
 }
 
@@ -27,16 +30,16 @@
 }
 
 .transaction-form {
-  background: #f5f5f5;
-  padding: 20px;
-  border-radius: 4px;
-  margin-bottom: 20px;
+  background: $color-bg-secondary;
+  padding: $spacing-lg;
+  border-radius: $border-radius-md;
+  margin-bottom: $spacing-lg;
 }
 
 .form-row {
   display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
 
   mat-form-field {
     flex: 1;
@@ -45,13 +48,13 @@
 
 .form-actions {
   display: flex;
-  gap: 8px;
+  gap: $spacing-sm;
   justify-content: flex-end;
 }
 
 .transactions-table {
   width: 100%;
-  margin-top: 20px;
+  margin-top: $spacing-lg;
 }
 
 .correlation-link {
@@ -64,33 +67,35 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 40px;
+  padding: $spacing-xl;
 }
 
 .empty-state {
   text-align: center;
-  padding: 60px 20px;
-  color: #666;
+  padding: $spacing-xl $spacing-lg;
+  color: $color-text-secondary;
 
   mat-icon {
     font-size: 64px;
     width: 64px;
     height: 64px;
-    color: #ccc;
-    margin-bottom: 16px;
+    color: $color-text-tertiary;
+    margin-bottom: $spacing-md;
   }
 
   p {
-    margin: 8px 0;
+    margin: $spacing-sm 0;
     font-size: 16px;
   }
 
   .hint {
     font-size: 14px;
-    color: #999;
+    color: $color-text-tertiary;
   }
 }
 
+// Fraud-status badge colors are intentional (Step 3: HELD amber / RELEASED green /
+// REJECTED rose) — preserved verbatim, NOT tokenized.
 .status-badge {
   padding: 4px 12px;
   border-radius: 12px;
@@ -131,8 +136,5 @@
 }
 
 .held-row {
-  background-color: #fffde7;
+  background-color: #fffde7; // intentional HELD row highlight
 }
-
-
-
