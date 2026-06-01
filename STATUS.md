@@ -45,6 +45,10 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 4 (UI redesign) in progress.
   - 6 new unit specs (interceptor 4 + guard 2) pass headless; `ng build` clean. (Full `npm test` still blocked by the pre-existing `incident-console.component.spec.ts` compile error — out of scope.)
 - **Cases screen redesign (2026-05-31)** — commit `a2fab75`
   - Replaced pre-redesign hardcoded `white` surfaces with semantic `$color-bg-primary` and applied the redesigned `.panel` convention (bordered, `$border-radius-xl`, no box-shadow) to the cases table, details drawer, note cards, and create-case form. Matches the Customers reference; `ng build` clean.
+- **Frontend test suite unblocked + green (2026-05-31)** — commits `56c5961`, `6b9278b`
+  - `incident-console.component.spec.ts` had a compile error (tested removed members `correlationId`/`searchIncident`/`incident`, never provided `ActivatedRoute`) that blocked Karma from running the ENTIRE suite (one type-check pass). Rewrote it against the current API (`filters.correlationId`, `searchIncidents()`, `incidentDetail`, `viewIncidentDetail`, `getStatusClass`) + provided `ActivatedRoute`/`NoopAnimations`.
+  - `transaction-form.component.spec.ts` (7 tests) failed on `MatFormField`'s `@transitionMessages` animation — added `provideNoopAnimations()`.
+  - `npm test` now runs **19/19 green** (was 0 executable). Only backend tests remain excluded (see Next).
 
 ## In progress
 - **Step 4 remaining screens** (~11 of 15+ still to build):
@@ -54,7 +58,7 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 4 (UI redesign) in progress.
 ## Next
 - Pick up Step 4 from existing screens redesign (Customers list is the logical next after Dashboard).
 - Add `CreateTransactionRequest.merchant` field so Fluxa's `blocked_merchant` rule can fire.
-- Fix pre-existing broken test files (`SlaServiceTest`, `AssignmentServiceTest`, `TimelineServiceTest` excluded via pom).
+- Fix pre-existing broken **backend** test files (`SlaServiceTest`, `AssignmentServiceTest`, `TimelineServiceTest` excluded via pom). (Frontend specs are now green — 19/19.)
 - **Commit + push** all bankops changes — Steps 2–4 partial are all uncommitted.
 
 ## Open decisions
