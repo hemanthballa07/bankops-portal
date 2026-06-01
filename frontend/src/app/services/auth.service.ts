@@ -18,11 +18,21 @@ export class AuthService {
     public currentUser$ = this.currentUserSubject.asObservable();
 
     constructor(private http: HttpClient) {
-        // Check if we have credentials on startup
         if (this.getAuthHeader()) {
-            // Optimistically assume logged in, verify later if needed
+            // optimistic so the guard lets the first navigation through immediately…
             this.currentUserSubject.next({ username: 'User', roles: [] });
+            // …then resolve the real identity. Defer to a microtask so the HTTP call
+            // (whose authInterceptor does inject(AuthService)) runs AFTER this
+            // constructor returns — avoids DI re-entrancy on the singleton.
+            Promise.resolve().then(() => this.hydrate());
         }
+    }
+
+    private hydrate(): void {
+        this.http.get<{ username: string; roles: string[] }>(`${this.apiUrl}/whoami`).subscribe({
+            next: r => this.currentUserSubject.next({ username: r.username, roles: r.roles || [] }),
+            error: () => { sessionStorage.removeItem(this.AUTH_KEY); this.currentUserSubject.next(null); },
+        });
     }
 
     login(username: string, password: string): Observable<any> {
