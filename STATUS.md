@@ -1,7 +1,7 @@
 # STATUS — bankops-portal
 
 ## Current phase
-Trifecta Steps 1–3 + Step A (e2e) complete. Step 4 (UI redesign) in progress.
+Trifecta Steps 1–3 + Step A (e2e) complete. Step 5 (merchant field) DONE. Step 4 (UI redesign) in progress.
 
 - **Step 1 (fluxa fraud-grpc)** — shipped 2026-05-30, commit `d71210f` (fluxa repo, local-only). Service live on `:9095`, rules-only eval, k6 p99 ~26ms.
 - **Step 2 (bankops ↔ fluxa gRPC)** — code-complete 2026-05-27. Full gRPC integration with FAIL_OPEN/FAIL_CLOSED policy.
@@ -9,6 +9,7 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 4 (UI redesign) in progress.
 - **Step A (e2e verification)** — CLOSED 2026-05-30. Four bankops bugs fixed. Full chain proven: POST → 202/HELD → EvaluateTransaction RPC → P1 SupportCase.
 - **Step 4 (UI redesign)** — IN PROGRESS 2026-05-30. Dark sidebar + Dashboard + Fraud Review Center built. See "In progress" for what's left.
 - **Trifecta console e2e (CORS + durable seed)** — CLOSED 2026-05-31. trifecta-console (`:3001`) → bankops verified in-browser end-to-end; commits `03749e3` (CORS), `46337d1` (seeder).
+- **Step 5 (merchant field → Fluxa `blocked_merchant`)** — DONE 2026-06-01. `merchant` threaded DTO→service→gate (commits `b33268c`, `ae12c24`); live e2e proved `Amazon Marketplace` $42 → HELD/P1 while control `Joes Coffee` $42 → COMPLETED.
 
 ## Done
 - Full `/understand` analysis run (2026-05-26, commit `9a461977`)
@@ -51,6 +52,12 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 4 (UI redesign) in progress.
   - `npm test` now runs **19/19 green** (was 0 executable). Only backend tests remain excluded (see Next).
 - **Account Detail screen redesign (2026-06-01)** — commit `b843208`
   - The styles predated the redesign (no design-system import; raw px + hardcoded neutral hex). Imported `variables`+`mixins` and tokenized spacing/surfaces/neutral text (`#f5f5f5` → `$color-bg-secondary`; greys → `$color-text-secondary/tertiary`). Intentional Step-3 fraud-status badge colors (HELD amber / RELEASED / REJECTED) + held-row highlight preserved verbatim. `ng build` clean. (Conservative pass — Account Detail uses `mat-card`s, not custom panels, so no structural panel overhaul.)
+- **Merchant field end-to-end → Fluxa `blocked_merchant` (2026-06-01)** — commits `b33268c` (backend), `ae12c24` (frontend)
+  - Optional `merchant` on `CreateTransactionRequest`, threaded `DTO → TransactionService → EvaluateRequest.merchant` at **both** call sites (deposit + withdrawal), replacing the hardcoded `"UNSPECIFIED"`. New private `resolveMerchant()` helper + `FLUXA_DEFAULT_MERCHANT` constant: blank/omitted merchant → `"UNSPECIFIED"` fallback (never trips Fluxa's empty-merchant INVALID_ARGUMENT, the old Bug-3 path).
+  - Optional Merchant input on the transaction form (`merchant?` added to the `CreateTransactionRequest` TS model).
+  - Tests: **156 backend + 19 frontend green.** New `TransactionServiceTest` forwarding + UNSPECIFIED-fallback tests; new `FluxaFraudClientTest` regression test asserting `merchant` reaches `EvaluateRequest`.
+  - **Live e2e** vs Fluxa `:9095` (fresh backend on `:8081`, real RPC): `Amazon Marketplace` $42 (under the 500 amount threshold) → **202 HELD** → P1/HIGH case summary `merchant="Amazon Marketplace" is blocked`; control `Joes Coffee` $42 → **201 COMPLETED**. Same amount, opposite outcome ⇒ merchant is the decider. corr `f32889d1-c8ab-46be-8492-fef55109f48d`. Reported to Fluxa (trifecta msg 31).
+  - Fluxa blocklist (read from `../fluxa/rules.yaml`, **exact-match**): `Amazon Marketplace`, `Walmart Online`, `Target`.
 
 ## In progress
 - **Step 4 remaining screens** (~11 of 15+ still to build):
@@ -59,13 +66,14 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 4 (UI redesign) in progress.
 
 ## Next
 - Pick up Step 4 from existing screens redesign (Customers list is the logical next after Dashboard).
-- Add `CreateTransactionRequest.merchant` field so Fluxa's `blocked_merchant` rule can fire.
-- Fix pre-existing broken **backend** test files (`SlaServiceTest`, `AssignmentServiceTest`, `TimelineServiceTest` excluded via pom). (Frontend specs are now green — 19/19.)
-- **Commit + push** all bankops changes — Steps 2–4 partial are all uncommitted.
+- Redesign the last 2 Step-4 screens still on old chrome: Incident Console, Audit Trail.
+- New screens (Step-4 backlog): Reports & Analytics, Admin settings (fraud rules / SLA / agents), Notifications rail.
+- Optional (Fluxa Step 5a, trifecta msg 29): surface the advisory `ml_score` as an "ML risk" chip on HELD txns/cases — needs re-vendoring the proto + regenerating stubs first. See Open decisions.
 
 ## Open decisions
 - Should shadow-mode swallow `InvalidArgument` (current) or surface 400 in observer mode?
 - Final typography + density decisions for redesigned screens.
+- Surface Fluxa's advisory `ml_score` (Step 5a, trifecta msg 29) as a UI chip? Low-signal for our feature-poor `EvaluateRequest`; Fluxa says advisory-only, don't gate on it. Cosmetic, deferred.
 
 ## Reference
 - **Restart sequence** — H2 wipes on restart, but `LocalDataSeeder` (`@Profile("local")`) now auto-seeds Customer id=1 + Account id=1 (CHEQUING, balance 250000) on an empty DB, so manual customer/account re-seed is **no longer needed**:
@@ -81,6 +89,6 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 4 (UI redesign) in progress.
   ```
 - Backend: `localhost:8080/api` (requires `-Dspring-boot.run.profiles=local`)
 - Frontend: `localhost:4200` (ng serve already running)
-- Tests: `cd backend && JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home mvn test`
+- Tests: `cd backend && JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home mvn test` — fully green as of 2026-06-01 (156 tests, incl. `SlaServiceTest`/`AssignmentServiceTest`/`TimelineServiceTest`; the old "pom-excluded / broken" note for those three is stale).
 - Fluxa stack: `cd ../fluxa && make up` (fraud-grpc :9095, `amount_threshold=500.00`)
 - Roles: ADMIN (full), SUPPORT (ops+audit), USER (read-only)
