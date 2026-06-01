@@ -52,6 +52,10 @@
              [matTooltip]="sidebarCollapsed ? 'Incident Console' : ''" matTooltipPosition="right">
             <mat-icon>manage_search</mat-icon><span *ngIf="!sidebarCollapsed">Incident Console</span>
           </a>
+          <a mat-list-item routerLink="/reports" routerLinkActive="active"
+             [matTooltip]="sidebarCollapsed ? 'Reports' : ''" matTooltipPosition="right">
+            <mat-icon>insights</mat-icon><span *ngIf="!sidebarCollapsed">Reports</span>
+          </a>
         </mat-nav-list>
       </mat-sidenav>
       <mat-sidenav-content class="main-content">

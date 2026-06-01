@@ -1,0 +1,44 @@
+<div class="reports-container">
+  <header class="page-header">
+    <h1>Reports &amp; Analytics</h1>
+    <p class="helper-text">Portfolio-wide transaction outcomes, case load, and SLA health.</p>
+  </header>
+
+  <div *ngIf="loading" class="state"><mat-spinner diameter="40"></mat-spinner></div>
+  <div *ngIf="error && !loading" class="state error"><mat-icon>error_outline</mat-icon><p>{{ error }}</p></div>
+
+  <ng-container *ngIf="summary && !loading">
+    <section class="kpi-row">
+      <div class="kpi-card"><div class="kpi-value">{{ summary.totalTransactions }}</div><div class="kpi-label">Total Transactions</div></div>
+      <div class="kpi-card"><div class="kpi-value">{{ summary.transactionsByStatus['HELD'] || 0 }}</div><div class="kpi-label">Fraud Holds</div></div>
+      <div class="kpi-card"><div class="kpi-value">{{ summary.caseKpis.openCases }}</div><div class="kpi-label">Open Cases</div></div>
+      <div class="kpi-card"><div class="kpi-value">{{ summary.caseKpis.slaAtRiskCases }}</div><div class="kpi-label">SLA At Risk</div></div>
+    </section>
+
+    <div class="panels">
+      <section class="panel">
+        <h2>Transactions by status</h2>
+        <ng-container *ngTemplateOutlet="bars; context: { rows: toRows(summary.transactionsByStatus, txClass) }"></ng-container>
+      </section>
+      <section class="panel">
+        <h2>Cases by severity</h2>
+        <ng-container *ngTemplateOutlet="bars; context: { rows: toRows(summary.casesBySeverity, severityClass) }"></ng-container>
+      </section>
+      <section class="panel">
+        <h2>Cases by state</h2>
+        <ng-container *ngTemplateOutlet="bars; context: { rows: toRows(summary.casesByState, neutralClass) }"></ng-container>
+      </section>
+    </div>
+  </ng-container>
+
+  <ng-template #bars let-rows="rows">
+    <p *ngIf="rows.length === 0" class="empty">No data yet.</p>
+    <div class="bar-list" *ngIf="rows.length > 0">
+      <div class="bar-row" *ngFor="let r of rows">
+        <span class="bar-label">{{ r.label }}</span>
+        <div class="bar-track"><div class="bar-fill" [class]="r.cssClass" [style.width.%]="pct(r.value, max(rows))"></div></div>
+        <span class="bar-value">{{ r.value }}</span>
+      </div>
+    </div>
+  </ng-template>
+</div>

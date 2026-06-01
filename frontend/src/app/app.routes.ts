@@ -16,6 +16,10 @@ export const routes: Routes = [
     loadComponent: () => import('./components/fraud-review/fraud-review.component').then(m => m.FraudReviewComponent),
   },
   {
+    path: 'reports', canActivate: [authGuard],
+    loadComponent: () => import('./components/reports/reports.component').then(m => m.ReportsComponent),
+  },
+  {
     path: 'customers', canActivate: [authGuard],
     loadComponent: () => import('./components/customers/customers.component').then(m => m.CustomersComponent),
   },

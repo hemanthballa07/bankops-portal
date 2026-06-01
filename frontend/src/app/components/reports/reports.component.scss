@@ -1,0 +1,59 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.reports-container {
+  max-width: $page-max-width;
+  margin: 0 auto;
+  padding: $spacing-lg;
+}
+
+.page-header {
+  margin-bottom: $spacing-lg;
+
+  h1 { font-size: $font-size-2xl; font-weight: $font-weight-semibold; color: $color-text-primary; margin: 0 0 $spacing-xs; }
+  .helper-text { color: $color-text-secondary; margin: 0; }
+}
+
+.state {
+  display: flex; flex-direction: column; align-items: center; padding: $spacing-2xl; gap: $spacing-md;
+  color: $color-text-secondary;
+  &.error mat-icon { color: $color-error; font-size: 48px; width: 48px; height: 48px; }
+}
+
+.kpi-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: $spacing-md; margin-bottom: $spacing-lg;
+}
+
+.kpi-card {
+  background: $color-bg-primary; border: $border-width solid $color-border; border-radius: $border-radius-xl;
+  padding: $spacing-lg;
+  .kpi-value { font-size: $font-size-3xl; font-weight: $font-weight-bold; color: $color-text-primary; line-height: 1; }
+  .kpi-label { margin-top: $spacing-xs; color: $color-text-secondary; font-size: $font-size-sm; }
+}
+
+.panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: $spacing-lg; }
+
+.panel {
+  background: $color-bg-primary; border: $border-width solid $color-border; border-radius: $border-radius-xl; padding: $spacing-lg;
+  h2 { font-size: $font-size-md; font-weight: $font-weight-semibold; color: $color-text-primary; margin: 0 0 $spacing-md; }
+}
+
+.empty { color: $color-text-tertiary; font-size: $font-size-sm; }
+
+.bar-list { display: flex; flex-direction: column; gap: $spacing-sm; }
+
+.bar-row { display: grid; grid-template-columns: 120px 1fr 40px; align-items: center; gap: $spacing-sm; }
+
+.bar-label { font-size: $font-size-sm; color: $color-text-secondary; @include truncate; }
+
+.bar-track { background: $color-bg-tertiary; border-radius: $border-radius-full; height: 10px; overflow: hidden; }
+
+.bar-fill {
+  height: 100%; border-radius: $border-radius-full; transition: width $transition-normal; min-width: 2px;
+  &.bar-success { background: $color-success; }
+  &.bar-warning { background: $color-warning; }
+  &.bar-error   { background: $color-error; }
+  &.bar-info    { background: $color-info; }
+}
+
+.bar-value { font-size: $font-size-sm; font-weight: $font-weight-semibold; color: $color-text-primary; text-align: right; }
