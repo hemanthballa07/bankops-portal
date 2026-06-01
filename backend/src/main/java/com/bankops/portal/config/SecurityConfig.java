@@ -42,6 +42,7 @@ public class SecurityConfig {
                                                 .requestMatchers("/incidents/**").hasAnyRole("USER", "SUPPORT")
                                                 .requestMatchers("/reports/**").hasAnyRole("USER", "SUPPORT")
                                                 .requestMatchers("/audit/**").hasAnyRole("ADMIN", "SUPPORT")
+                                                .requestMatchers("/agents/**").hasRole("ADMIN")
                                                 .anyRequest().authenticated())
                                 .httpBasic(httpBasic -> {
                                 })
