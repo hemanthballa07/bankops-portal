@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { TransactionFormComponent } from './transaction-form.component';
 import { CreateTransactionRequest } from '../../models/transaction.model';
 
@@ -8,7 +9,8 @@ describe('TransactionFormComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TransactionFormComponent]
+      imports: [TransactionFormComponent],
+      providers: [provideNoopAnimations()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TransactionFormComponent);
