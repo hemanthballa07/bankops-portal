@@ -1,23 +1,28 @@
-/* Design Tokens - Chase-inspired */
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+/* Local CSS custom properties mapped to the shared design system, so this screen
+   matches the redesigned surfaces (bordered panels, no box-shadow) while keeping
+   semantic status hues. Token changes now live in styles/_variables.scss. */
 :host {
-  --primary-blue: #0070BA;
-  --success-green: #388E3C;
-  --warning-orange: #F57C00;
-  --error-red: #D32F2F;
-  --text-primary: #333333;
-  --text-secondary: #666666;
-  --border-color: #E0E0E0;
-  --background-gray: #F5F5F5;
+  --primary-blue: #{$color-info};
+  --success-green: #{$color-success};
+  --warning-orange: #{$color-warning};
+  --error-red: #{$color-error};
+  --text-primary: #{$color-text-primary};
+  --text-secondary: #{$color-text-secondary};
+  --border-color: #{$color-border};
+  --background-gray: #{$color-bg-secondary};
 
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 32px;
+  --spacing-xs: #{$spacing-xs};
+  --spacing-sm: #{$spacing-sm};
+  --spacing-md: #{$spacing-md};
+  --spacing-lg: #{$spacing-lg};
+  --spacing-xl: #{$spacing-xl};
 
-  --max-content-width: 1400px;
-  --card-border-radius: 8px;
-  --card-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --max-content-width: #{$page-max-width};
+  --card-border-radius: #{$border-radius-xl};
+  --card-shadow: none;
 }
 
 /* Container */
@@ -50,7 +55,9 @@
   margin-bottom: var(--spacing-lg);
   padding: var(--spacing-lg);
   border-radius: var(--card-border-radius);
+  border: $border-width solid $color-border;
   box-shadow: var(--card-shadow);
+  background: $color-bg-primary;
 }
 
 .search-row {
@@ -94,13 +101,15 @@
   align-items: center;
   padding: var(--spacing-lg);
   border-radius: var(--card-border-radius);
+  border: $border-width solid $color-border;
   box-shadow: var(--card-shadow);
-  transition: transform 0.2s, box-shadow 0.2s;
+  background: $color-bg-primary;
+  transition: transform $transition-normal, border-color $transition-normal;
 }
 
 .kpi-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  border-color: $color-border-strong;
 }
 
 .kpi-icon {
@@ -157,7 +166,9 @@
 /* Results Card */
 .results-card {
   border-radius: var(--card-border-radius);
+  border: $border-width solid $color-border;
   box-shadow: var(--card-shadow);
+  background: $color-bg-primary;
   padding: var(--spacing-lg);
 }
 
@@ -187,7 +198,7 @@
 
 .incidents-table {
   width: 100%;
-  background: white;
+  background: $color-bg-primary;
 }
 
 .incidents-table th {
@@ -315,13 +326,13 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: white;
+  background: $color-bg-primary;
 }
 
 .drawer-header {
   padding: var(--spacing-lg);
   border-bottom: 1px solid var(--border-color);
-  background: white;
+  background: $color-bg-primary;
 }
 
 .header-top {
@@ -414,17 +425,17 @@
 
 .log-entry.log-error {
   border-left-color: var(--error-red);
-  background: #FFEBEE;
+  background: $color-error-bg;
 }
 
 .log-entry.log-warn {
   border-left-color: var(--warning-orange);
-  background: #FFF3E0;
+  background: $color-warning-bg;
 }
 
 .log-entry.log-info {
   border-left-color: var(--primary-blue);
-  background: #E3F2FD;
+  background: $color-info-bg;
 }
 
 .log-header {
@@ -453,7 +464,7 @@
 
 .log-context pre {
   font-size: 12px;
-  background: white;
+  background: $color-bg-primary;
   padding: var(--spacing-sm);
   border-radius: 4px;
   overflow-x: auto;
@@ -466,7 +477,7 @@
   border-top: 1px solid var(--border-color);
   display: flex;
   gap: var(--spacing-sm);
-  background: white;
+  background: $color-bg-primary;
 }
 
 .drawer-actions button {

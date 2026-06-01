@@ -21,7 +21,7 @@ import { AuditEvent } from '../../models/audit-event.model';
         MatIconModule
     ],
     templateUrl: './audit-timeline.component.html',
-    styleUrl: './audit-timeline.component.css'
+    styleUrl: './audit-timeline.component.scss'
 })
 export class AuditTimelineComponent implements OnInit {
     auditEvents: AuditEvent[] = [];
