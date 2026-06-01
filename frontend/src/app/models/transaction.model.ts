@@ -15,6 +15,7 @@ export interface CreateTransactionRequest {
   amount: number;
   description?: string;
   category?: string;
+  merchant?: string; // Optional; forwarded to Fluxa's blocked_merchant rule.
 }
 
 export interface ReviewTransactionRequest {

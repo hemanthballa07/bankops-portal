@@ -29,10 +29,14 @@ import { CreateTransactionRequest } from '../../models/transaction.model';
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>Amount</mat-label>
-        <input matInput type="number" [(ngModel)]="transaction.amount" 
+        <input matInput type="number" [(ngModel)]="transaction.amount"
                [min]="0.01" [step]="0.01" required>
       </mat-form-field>
-      <button mat-raised-button color="primary" 
+      <mat-form-field appearance="outline">
+        <mat-label>Merchant</mat-label>
+        <input matInput [(ngModel)]="transaction.merchant" placeholder="optional">
+      </mat-form-field>
+      <button mat-raised-button color="primary"
               [disabled]="!isValid()" 
               (click)="onSubmit()">
         Submit
