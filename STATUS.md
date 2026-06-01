@@ -72,10 +72,15 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 5 (merchant field) + Step 6b 
   - New `/reports` route + OPERATIONS nav entry; `ReportsComponent` renders KPI cards + lightweight **CSS bar charts** (no charting dependency — matches the `mat-list`/KPI approach), tokenized; loading/empty states.
   - Built via the full loop (plan → critique×2 ⇄ patch → impl): critique caught a must-fix (test seed omitted required `customer`) + 4 should-fix (absolute `environment.apiUrl`, nav class, flaky `findAll()` ordering, missing `/reports` matcher).
   - **158 backend tests green** (new `ReportsIntegrationTest`) + `ng build` clean + 19/19 specs. **Live-proven**: seeded HELD+COMPLETED → `summary` returned `{COMPLETED:1, HELD:1}`, `casesBySeverity {HIGH:1}`, `casesByState {NEW:1}`, reused `caseKpis`, totals 2/1.
+- **Admin · Agent Management — Step 4 new screen (2026-06-01)** — commits `ff4b774` (backend), `e2d639f` (frontend)
+  - New **ADMIN-only** CRUD over the existing `Agent` model: `GET/POST/PUT /api/agents` + `PATCH /agents/{id}/active` (`AgentController`/`AgentService`, reusing `AgentRepository`/`AgentDto`); live per-agent `currentActiveCount` via `countByAssigneeIdAndStateIn(id, [NEW,IN_PROGRESS])`; `skills` JSON↔List via `ObjectMapper`; email uniqueness → 400. `SecurityConfig` gets `/agents/** → hasRole("ADMIN")`.
+  - New `/admin` route + nav entry; `AdminAgentsComponent` — agent table (name/email/load bar/max/active toggle) + inline create form, tokenized.
+  - Built via the full loop; critique-1 was **READY on iteration 1** (all load-bearing facts pre-verified: `IllegalArgumentException`→400, `AgentDto @Builder`, ADMIN role, `/agents` not claimed by the local console chain).
+  - **163 backend tests green** (new `AgentManagementIntegrationTest`, 5 tests incl. USER→403) + `ng build` clean + 19/19 specs. **Live-proven** (admin): create→201, duplicate email→400, `support`→403, list shows the agent.
 
 ## In progress
 - **Step 4 — all existing screens now on the dark-chrome design system** (Incident Console + Audit Trail tokenized 2026-06-01). Remaining Step-4 work is net-new screens:
-  - New screens: Admin settings (fraud rules, SLA config, agent management), Notifications rail (Reports & Analytics done 2026-06-01)
+  - New screens: Notifications rail (Reports & Analytics + Admin·Agent-Management done 2026-06-01; fraud-rules admin lives in Fluxa's rules.yaml — cross-repo; SLA-config admin deferred — durations are hardcoded in the `SlaPriority` enum, see Open decisions)
 
 ## Next
 - New screens (Step-4 backlog): Reports & Analytics, Admin settings (fraud rules / SLA / agents), Notifications rail.
