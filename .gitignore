@@ -30,6 +30,13 @@ logs/
 .env.local
 *.env
 
+# Local tooling / scratch notes (never committed)
+.claude/
+.understand-anything/
+CLAUDE.md
+HANDOFF-STEP2.md
+docs/superpowers/
+
 
 
 
