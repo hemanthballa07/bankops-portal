@@ -35,8 +35,8 @@ logging:
     root: INFO
     com.bankops.portal: DEBUG
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{correlationId}] %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%X{traceId:-}/%X{spanId:-}] - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{traceId:-}/%X{spanId:-}] [%X{correlationId}] %logger{36} - %msg%n"
 
 # Fluxa fraud-eval gRPC client (see com.bankops.portal.config.FluxaProperties).
 # Defaults: feature-flag off, shadow-mode on, FAIL_CLOSED withdrawal /
@@ -60,6 +60,9 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+  tracing:
+    sampling:
+      probability: 0.0
 
 ---
 spring:

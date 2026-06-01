@@ -7,3 +7,13 @@ bankops:
     withdrawal: FAIL_OPEN
     deposit: FAIL_OPEN
     deadline: PT2S
+
+# Distributed tracing: sample everything locally and export to Fluxa's shared
+# Jaeger (OTLP/HTTP). Disabled in test; 0% sampling by default.
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces

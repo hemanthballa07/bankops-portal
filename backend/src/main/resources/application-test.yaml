@@ -9,3 +9,9 @@ bankops:
     shadow-mode: false
     withdrawal: FAIL_CLOSED
     deposit: FAIL_CLOSED
+
+# Tracing off in tests: hermetic, no OTLP export attempts, and the OpenTelemetry
+# bean is absent so FluxaClientConfiguration builds the channel without the interceptor.
+management:
+  tracing:
+    enabled: false

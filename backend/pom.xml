@@ -26,7 +26,21 @@
         <grpc.version>1.68.1</grpc.version>
         <protobuf.version>3.25.5</protobuf.version>
     </properties>
-    
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- OpenTelemetry instrumentation alpha artifacts (e.g. gRPC) are not
+                 in Spring Boot's BOM; pin to the OTel API line SB 3.2 resolves (1.31.0). -->
+            <dependency>
+                <groupId>io.opentelemetry.instrumentation</groupId>
+                <artifactId>opentelemetry-instrumentation-bom-alpha</artifactId>
+                <version>1.31.0-alpha</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <!-- Spring Boot Starters -->
         <dependency>
@@ -54,7 +68,28 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-        
+
+        <!-- Distributed tracing: Micrometer Tracing + OpenTelemetry bridge -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-otel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
+        <!-- OpenTelemetry gRPC client instrumentation (provides GrpcTelemetry) -->
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-grpc-1.6</artifactId>
+        </dependency>
+        <!-- OTel SDK testing harness (trace-propagation test) -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-testing</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Database -->
         <dependency>
             <groupId>com.h2database</groupId>
