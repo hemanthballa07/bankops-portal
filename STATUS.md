@@ -63,15 +63,16 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 5 (merchant field) + Step 6b 
   - Deps: `micrometer-tracing-bridge-otel` + `opentelemetry-exporter-otlp` + `opentelemetry-grpc-1.6` (alpha BOM pinned `1.31.0-alpha` to match SB 3.2's OTel 1.31.0). HTTP server spans auto-instrumented; a `GrpcTelemetry` client interceptor on the Fluxa `ManagedChannel` (guarded by `ObjectProvider<OpenTelemetry>`) injects the W3C `traceparent` so Fluxa's otelgrpc server joins the trace.
   - Config: sampling `1.0` local / `0.0` default / **`management.tracing.enabled: false` in test** (hermetic — 157 tests green incl. a new `FluxaTracePropagationTest` asserting `traceparent` injection). OTLP/HTTP → shared Jaeger `:4318`. `traceId`/`spanId` added to log patterns.
   - **Live proof:** trace `af3c89e6a95628f4c4fdc731d0ce45ac` — 11 spans, services `bankops-portal` + `fraud-grpc` + `ml-scorer` in one trace (Java→Go→Python); deposit returned 201 (tracing fail-safe on the hot path). Reported to Fluxa (trifecta msg 33).
+- **Incident Console + Audit Trail redesign — Step 4 (2026-06-01)** — commit `1dcf0dd`
+  - **Incident Console**: imported shared `variables`+`mixins`; remapped the local `:host` "Chase-inspired" tokens to design-system values; gave the search/KPI/results cards the bordered-panel convention (`$border-radius-xl`, `$color-border`, no box-shadow); mapped log-level + status tints to `$color-error/warning/info-bg`; tokenized `white` surfaces. KPI icon gradients preserved (intentional accent visuals).
+  - **Audit Trail (`audit-timeline`)**: converted plain `.css` → tokenized `.scss` (rail/dot → `$color-border`/`$chrome-accent`; **diff colors preserved** old=`$color-error` strikethrough / new=`$color-success`); repointed `styleUrl`; removed the old `.css`.
+  - `ng build` clean; **19/19 specs green**. (Pre-existing 6kb component-style *warning* on incident-console unchanged in kind; well under the 10kb error cap.)
 
 ## In progress
-- **Step 4 remaining screens** (~11 of 15+ still to build):
-  - Redesign existing screens to match new dark chrome: Incident Console, Audit Trail
+- **Step 4 — all existing screens now on the dark-chrome design system** (Incident Console + Audit Trail tokenized 2026-06-01). Remaining Step-4 work is net-new screens:
   - New screens: Reports & Analytics, Admin settings (fraud rules, SLA config, agent management), Notifications rail
 
 ## Next
-- Pick up Step 4 from existing screens redesign (Customers list is the logical next after Dashboard).
-- Redesign the last 2 Step-4 screens still on old chrome: Incident Console, Audit Trail.
 - New screens (Step-4 backlog): Reports & Analytics, Admin settings (fraud rules / SLA / agents), Notifications rail.
 - Optional (Fluxa Step 5a, trifecta msg 29): surface the advisory `ml_score` as an "ML risk" chip on HELD txns/cases — needs re-vendoring the proto + regenerating stubs first. See Open decisions.
 
