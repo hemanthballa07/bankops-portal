@@ -8,13 +8,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/accounts")
 @RequiredArgsConstructor
 public class AccountsController {
     
     private final AccountService accountService;
-    
+
+    @GetMapping
+    public ResponseEntity<List<AccountDto>> getAllAccounts() {
+        return ResponseEntity.ok(accountService.getAllAccounts());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<AccountDto> getAccountById(@PathVariable Long id) {
         AccountDto account = accountService.getAccountById(id);

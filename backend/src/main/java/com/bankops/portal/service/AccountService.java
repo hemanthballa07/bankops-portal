@@ -59,6 +59,12 @@ public class AccountService {
         return toDto(account);
     }
 
+    public List<AccountDto> getAllAccounts() {
+        return accountRepository.findAll().stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public AccountDto updateAccount(Long id, UpdateAccountRequest request) {
         Account account = accountRepository.findById(id)

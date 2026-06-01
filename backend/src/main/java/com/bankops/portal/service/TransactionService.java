@@ -522,6 +522,15 @@ public class TransactionService {
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
+    public TransactionDto getTransaction(Long accountId, Long transactionId) {
+        Transaction txn = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new IllegalArgumentException("Transaction not found: " + transactionId));
+        if (!txn.getAccount().getId().equals(accountId)) {
+            throw new IllegalArgumentException("Transaction does not belong to account: " + accountId);
+        }
+        return toDto(txn);
+    }
+
     public TransactionDto releaseTransaction(Long accountId, Long transactionId, String actorId, String notes) {
         Transaction txn = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new IllegalArgumentException("Transaction not found: " + transactionId));

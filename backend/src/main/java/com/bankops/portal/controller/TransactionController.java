@@ -64,6 +64,13 @@ public class TransactionController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/{transactionId}")
+    public ResponseEntity<TransactionDto> getTransaction(
+            @PathVariable Long accountId,
+            @PathVariable Long transactionId) {
+        return ResponseEntity.ok(transactionService.getTransaction(accountId, transactionId));
+    }
+
     @PostMapping("/{transactionId}/release")
     public ResponseEntity<TransactionDto> releaseTransaction(
             @PathVariable Long accountId,
