@@ -44,6 +44,7 @@ import org.springframework.transaction.annotation.Propagation;
 public class TransactionService {
 
     private static final String FLUXA_DEFAULT_CURRENCY = "USD";
+    private static final String FLUXA_DEFAULT_MERCHANT = "UNSPECIFIED";
 
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
@@ -105,7 +106,7 @@ public class TransactionService {
         String correlationId = UUID.randomUUID().toString();
         FluxaEvalOutcome fluxaOutcome = fluxaFraudClient.evaluate(
                 correlationId, accountId, request.getAmount(),
-                FLUXA_DEFAULT_CURRENCY, "UNSPECIFIED", Instant.now());
+                FLUXA_DEFAULT_CURRENCY, resolveMerchant(request), Instant.now());
 
         int maxRetries = 3;
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
@@ -253,6 +254,15 @@ public class TransactionService {
     }
 
     /**
+     * Fluxa rejects an empty merchant (INVALID_ARGUMENT). Use the caller-supplied
+     * merchant when present, otherwise the non-empty fallback so the gate still runs.
+     */
+    private static String resolveMerchant(CreateTransactionRequest request) {
+        String merchant = request.getMerchant();
+        return (merchant != null && !merchant.isBlank()) ? merchant : FLUXA_DEFAULT_MERCHANT;
+    }
+
+    /**
      * Acts on a precomputed {@link FluxaEvalOutcome}. Returns a non-null DTO when
      * the outcome forces an early return (HELD on flag); returns null when the
      * caller should fall through to the success-path tail. Throws to surface
@@ -372,7 +382,7 @@ public class TransactionService {
         if (fluxaProperties.enabled()) {
             FluxaEvalOutcome fluxaOutcome = fluxaFraudClient.evaluate(
                     correlationId, accountId, request.getAmount(),
-                    FLUXA_DEFAULT_CURRENCY, "UNSPECIFIED", Instant.now());
+                    FLUXA_DEFAULT_CURRENCY, resolveMerchant(request), Instant.now());
             Transaction.TransactionBuilder flagBuilder = Transaction.builder()
                     .account(account)
                     .type(transactionType)

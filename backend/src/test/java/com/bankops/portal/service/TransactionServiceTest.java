@@ -171,6 +171,62 @@ class TransactionServiceTest {
     }
 
     @Test
+    @DisplayName("Should forward request merchant to Fluxa on withdrawal")
+    void testWithdrawal_ForwardsMerchantToFluxa() {
+        CreateTransactionRequest request = new CreateTransactionRequest();
+        request.setType("WITHDRAWAL");
+        request.setAmount(new BigDecimal("100.00"));
+        request.setMerchant("SilkRoadBazaar");
+
+        when(transactionRepository.findByAccount_IdAndIdempotencyKeyAndType(
+                anyLong(), anyString(), any())).thenReturn(Optional.empty());
+        when(fluxaFraudClient.evaluate(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new FluxaEvalOutcome.Disabled());
+        when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
+            Transaction t = invocation.getArgument(0);
+            t.setId(20L);
+            return t;
+        });
+        when(accountRepository.save(any(Account.class))).thenReturn(testAccount);
+
+        transactionService.createTransaction(100L, request, "idem-merchant");
+
+        ArgumentCaptor<String> merchantCaptor = ArgumentCaptor.forClass(String.class);
+        verify(fluxaFraudClient).evaluate(any(), any(), any(), any(),
+                merchantCaptor.capture(), any());
+        assertEquals("SilkRoadBazaar", merchantCaptor.getValue());
+    }
+
+    @Test
+    @DisplayName("Should fall back to UNSPECIFIED merchant when request omits it")
+    void testWithdrawal_NullMerchant_FallsBackToUnspecified() {
+        CreateTransactionRequest request = new CreateTransactionRequest();
+        request.setType("WITHDRAWAL");
+        request.setAmount(new BigDecimal("100.00"));
+        // merchant intentionally left null
+
+        when(transactionRepository.findByAccount_IdAndIdempotencyKeyAndType(
+                anyLong(), anyString(), any())).thenReturn(Optional.empty());
+        when(fluxaFraudClient.evaluate(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new FluxaEvalOutcome.Disabled());
+        when(accountRepository.findById(100L)).thenReturn(Optional.of(testAccount));
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
+            Transaction t = invocation.getArgument(0);
+            t.setId(21L);
+            return t;
+        });
+        when(accountRepository.save(any(Account.class))).thenReturn(testAccount);
+
+        transactionService.createTransaction(100L, request, "idem-null-merchant");
+
+        ArgumentCaptor<String> merchantCaptor = ArgumentCaptor.forClass(String.class);
+        verify(fluxaFraudClient).evaluate(any(), any(), any(), any(),
+                merchantCaptor.capture(), any());
+        assertEquals("UNSPECIFIED", merchantCaptor.getValue());
+    }
+
+    @Test
     @DisplayName("Should successfully create withdrawal with overdraft enabled")
     void testCreateWithdrawal_WithOverdraft_Success() {
         // Arrange

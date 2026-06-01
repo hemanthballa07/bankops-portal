@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -13,6 +14,7 @@ import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.bankops.portal.config.FluxaProperties;
@@ -116,5 +118,19 @@ class FluxaFraudClientTest {
         assertThat(outcome).isInstanceOf(FluxaEvalOutcome.InvalidArgument.class);
         assertThat(((FluxaEvalOutcome.InvalidArgument) outcome).message())
                 .isEqualTo("event_id is required");
+    }
+
+    @Test
+    void evaluate_setsMerchantOnRequest() {
+        when(stub.evaluateTransaction(any(EvaluateRequest.class))).thenReturn(
+                EvaluateResponse.newBuilder().setDecision(Decision.DECISION_ALLOW).build());
+        FluxaFraudClient client = new FluxaFraudClient(stub, enabledProps, loggingService);
+
+        client.evaluate("cid", 1L, BigDecimal.TEN, "USD", "SilkRoadBazaar", Instant.now());
+
+        // Capture in verify (not in when) — capturing during stubbing is a Mockito smell.
+        ArgumentCaptor<EvaluateRequest> captor = ArgumentCaptor.forClass(EvaluateRequest.class);
+        verify(stub).evaluateTransaction(captor.capture());
+        assertThat(captor.getValue().getMerchant()).isEqualTo("SilkRoadBazaar");
     }
 }

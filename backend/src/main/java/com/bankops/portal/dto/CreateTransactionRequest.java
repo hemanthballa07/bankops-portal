@@ -20,6 +20,8 @@ public class CreateTransactionRequest {
     private String description; // Optional transaction description
 
     private String category; // Optional category (defaults to OTHER if not provided)
+
+    private String merchant; // Optional. Forwarded to Fluxa's blocked_merchant rule; blank → "UNSPECIFIED".
 }
 
 
