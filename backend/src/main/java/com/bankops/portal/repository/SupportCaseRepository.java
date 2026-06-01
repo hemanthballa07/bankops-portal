@@ -30,4 +30,12 @@ public interface SupportCaseRepository extends JpaRepository<SupportCase, Long> 
          * Count active cases for an agent (for assignment load tracking)
          */
         long countByAssigneeIdAndStateIn(Long assigneeId, List<CaseState> states);
+
+        @org.springframework.data.jpa.repository.Query(
+            "SELECT c.state, COUNT(c) FROM SupportCase c GROUP BY c.state")
+        java.util.List<Object[]> countGroupedByState();
+
+        @org.springframework.data.jpa.repository.Query(
+            "SELECT c.severity, COUNT(c) FROM SupportCase c GROUP BY c.severity")
+        java.util.List<Object[]> countGroupedBySeverity();
 }

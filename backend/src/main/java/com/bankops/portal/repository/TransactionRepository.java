@@ -74,4 +74,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                         @Param("accountId") Long accountId,
                         @Param("startDate") LocalDateTime startDate,
                         @Param("endDate") LocalDateTime endDate);
+
+        @org.springframework.data.jpa.repository.Query(
+            "SELECT t.status, COUNT(t) FROM Transaction t GROUP BY t.status")
+        java.util.List<Object[]> countGroupedByStatus();
 }
