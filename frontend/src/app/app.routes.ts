@@ -20,6 +20,10 @@ export const routes: Routes = [
     loadComponent: () => import('./components/reports/reports.component').then(m => m.ReportsComponent),
   },
   {
+    path: 'admin', canActivate: [authGuard],
+    loadComponent: () => import('./components/admin-agents/admin-agents.component').then(m => m.AdminAgentsComponent),
+  },
+  {
     path: 'customers', canActivate: [authGuard],
     loadComponent: () => import('./components/customers/customers.component').then(m => m.CustomersComponent),
   },

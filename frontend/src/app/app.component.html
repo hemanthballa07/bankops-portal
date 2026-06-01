@@ -56,6 +56,10 @@
              [matTooltip]="sidebarCollapsed ? 'Reports' : ''" matTooltipPosition="right">
             <mat-icon>insights</mat-icon><span *ngIf="!sidebarCollapsed">Reports</span>
           </a>
+          <a mat-list-item routerLink="/admin" routerLinkActive="active"
+             [matTooltip]="sidebarCollapsed ? 'Admin' : ''" matTooltipPosition="right">
+            <mat-icon>admin_panel_settings</mat-icon><span *ngIf="!sidebarCollapsed">Admin</span>
+          </a>
         </mat-nav-list>
       </mat-sidenav>
       <mat-sidenav-content class="main-content">

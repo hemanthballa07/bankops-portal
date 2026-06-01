@@ -1,0 +1,48 @@
+<div class="admin-container">
+  <header class="page-header">
+    <div>
+      <h1>Admin &middot; Agents</h1>
+      <p class="helper-text">Manage support agents, capacity, and availability.</p>
+    </div>
+    <button class="primary-btn" (click)="showForm = !showForm">
+      <mat-icon>person_add</mat-icon> New agent
+    </button>
+  </header>
+
+  <section class="panel form-panel" *ngIf="showForm">
+    <div class="form-row">
+      <input [(ngModel)]="draft.name" placeholder="Name" />
+      <input [(ngModel)]="draft.email" placeholder="Email" type="email" />
+      <input [(ngModel)]="draft.maxActiveCases" type="number" min="1" placeholder="Max cases" />
+      <button class="primary-btn" [disabled]="saving" (click)="createAgent()">Create</button>
+    </div>
+    <p class="form-error" *ngIf="formError">{{ formError }}</p>
+  </section>
+
+  <div *ngIf="loading" class="state"><mat-spinner diameter="40"></mat-spinner></div>
+  <div *ngIf="error && !loading" class="state error"><mat-icon>error_outline</mat-icon><p>{{ error }}</p></div>
+
+  <section class="panel" *ngIf="!loading && agents.length > 0">
+    <table class="agents-table">
+      <thead>
+        <tr><th>Name</th><th>Email</th><th>Load</th><th>Max</th><th>Active</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let a of agents">
+          <td>{{ a.name }}</td>
+          <td class="muted">{{ a.email }}</td>
+          <td>
+            <div class="load-cell">
+              <div class="load-track"><div class="load-fill" [class.over]="a.currentActiveCount >= a.maxActiveCases" [style.width.%]="loadPct(a)"></div></div>
+              <span>{{ a.currentActiveCount }}/{{ a.maxActiveCases }}</span>
+            </div>
+          </td>
+          <td>{{ a.maxActiveCases }}</td>
+          <td><mat-slide-toggle [checked]="a.active" (change)="toggleActive(a)"></mat-slide-toggle></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <p *ngIf="!loading && agents.length === 0" class="empty">No agents yet.</p>
+</div>
