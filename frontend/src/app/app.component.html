@@ -1,69 +1,66 @@
-<div class="app-container">
-    <!-- Top Brand Bar -->
+<ng-container *ngIf="(showShell$ | async); else bare">
+  <div class="app-container">
     <mat-toolbar class="brand-bar dark">
-        <button mat-icon-button (click)="toggleSidebar()" class="sidebar-toggle">
-            <mat-icon>menu</mat-icon>
+      <button mat-icon-button (click)="toggleSidebar()" class="sidebar-toggle">
+        <mat-icon>menu</mat-icon>
+      </button>
+      <div class="brand-lockup">
+        <mat-icon class="brand-icon">account_balance</mat-icon>
+        <span class="brand-name">BankOps</span>
+        <span class="brand-tag">OPS PORTAL</span>
+      </div>
+      <span class="spacer"></span>
+      <div class="topbar-actions">
+        <button mat-icon-button class="topbar-btn" matTooltip="Notifications">
+          <mat-icon>notifications_none</mat-icon>
         </button>
-        <div class="brand-lockup">
-            <mat-icon class="brand-icon">account_balance</mat-icon>
-            <span class="brand-name">BankOps</span>
-            <span class="brand-tag">OPS PORTAL</span>
+        <button mat-icon-button class="topbar-btn" matTooltip="Help">
+          <mat-icon>help_outline</mat-icon>
+        </button>
+        <div class="avatar-pill">
+          <mat-icon>account_circle</mat-icon>
+          <span *ngIf="!sidebarCollapsed">{{ (currentUser$ | async)?.username || 'User' }}</span>
         </div>
-        <span class="spacer"></span>
-        <div class="topbar-actions">
-            <button mat-icon-button class="topbar-btn" matTooltip="Notifications">
-                <mat-icon>notifications_none</mat-icon>
-            </button>
-            <button mat-icon-button class="topbar-btn" matTooltip="Help">
-                <mat-icon>help_outline</mat-icon>
-            </button>
-            <div class="avatar-pill">
-                <mat-icon>account_circle</mat-icon>
-                <span *ngIf="!sidebarCollapsed">Support Agent</span>
-            </div>
-        </div>
+        <button mat-icon-button class="topbar-btn" matTooltip="Sign out" (click)="logout()">
+          <mat-icon>logout</mat-icon>
+        </button>
+      </div>
     </mat-toolbar>
 
-    <!-- Sidebar + Content -->
     <mat-sidenav-container class="sidenav-container">
-        <mat-sidenav mode="side" opened [class.collapsed]="sidebarCollapsed" class="sidebar dark">
-            <mat-nav-list>
-                <a mat-list-item routerLink="/dashboard" routerLinkActive="active"
-                    [matTooltip]="sidebarCollapsed ? 'Dashboard' : ''" matTooltipPosition="right">
-                    <mat-icon>home</mat-icon>
-                    <span *ngIf="!sidebarCollapsed">Dashboard</span>
-                </a>
-                <a mat-list-item routerLink="/fraud-review" routerLinkActive="active" class="nav-fraud"
-                    [matTooltip]="sidebarCollapsed ? 'Fraud Review' : ''" matTooltipPosition="right">
-                    <mat-icon>gpp_bad</mat-icon>
-                    <span *ngIf="!sidebarCollapsed">Fraud Review</span>
-                </a>
-
-                <div class="nav-divider" *ngIf="!sidebarCollapsed">
-                    <span>OPERATIONS</span>
-                </div>
-                <div class="nav-divider-line" *ngIf="sidebarCollapsed"></div>
-
-                <a mat-list-item routerLink="/customers" routerLinkActive="active"
-                    [matTooltip]="sidebarCollapsed ? 'Customers' : ''" matTooltipPosition="right">
-                    <mat-icon>people</mat-icon>
-                    <span *ngIf="!sidebarCollapsed">Customers</span>
-                </a>
-                <a mat-list-item routerLink="/cases" routerLinkActive="active"
-                    [matTooltip]="sidebarCollapsed ? 'Cases' : ''" matTooltipPosition="right">
-                    <mat-icon>support_agent</mat-icon>
-                    <span *ngIf="!sidebarCollapsed">Cases</span>
-                </a>
-                <a mat-list-item routerLink="/incidents" routerLinkActive="active"
-                    [matTooltip]="sidebarCollapsed ? 'Incident Console' : ''" matTooltipPosition="right">
-                    <mat-icon>manage_search</mat-icon>
-                    <span *ngIf="!sidebarCollapsed">Incident Console</span>
-                </a>
-            </mat-nav-list>
-        </mat-sidenav>
-
-        <mat-sidenav-content class="main-content">
-            <router-outlet></router-outlet>
-        </mat-sidenav-content>
+      <mat-sidenav mode="side" opened [class.collapsed]="sidebarCollapsed" class="sidebar dark">
+        <mat-nav-list>
+          <a mat-list-item routerLink="/dashboard" routerLinkActive="active"
+             [matTooltip]="sidebarCollapsed ? 'Dashboard' : ''" matTooltipPosition="right">
+            <mat-icon>home</mat-icon><span *ngIf="!sidebarCollapsed">Dashboard</span>
+          </a>
+          <a mat-list-item routerLink="/fraud-review" routerLinkActive="active" class="nav-fraud"
+             [matTooltip]="sidebarCollapsed ? 'Fraud Review' : ''" matTooltipPosition="right">
+            <mat-icon>gpp_bad</mat-icon><span *ngIf="!sidebarCollapsed">Fraud Review</span>
+          </a>
+          <div class="nav-divider" *ngIf="!sidebarCollapsed"><span>OPERATIONS</span></div>
+          <div class="nav-divider-line" *ngIf="sidebarCollapsed"></div>
+          <a mat-list-item routerLink="/customers" routerLinkActive="active"
+             [matTooltip]="sidebarCollapsed ? 'Customers' : ''" matTooltipPosition="right">
+            <mat-icon>people</mat-icon><span *ngIf="!sidebarCollapsed">Customers</span>
+          </a>
+          <a mat-list-item routerLink="/cases" routerLinkActive="active"
+             [matTooltip]="sidebarCollapsed ? 'Cases' : ''" matTooltipPosition="right">
+            <mat-icon>support_agent</mat-icon><span *ngIf="!sidebarCollapsed">Cases</span>
+          </a>
+          <a mat-list-item routerLink="/incidents" routerLinkActive="active"
+             [matTooltip]="sidebarCollapsed ? 'Incident Console' : ''" matTooltipPosition="right">
+            <mat-icon>manage_search</mat-icon><span *ngIf="!sidebarCollapsed">Incident Console</span>
+          </a>
+        </mat-nav-list>
+      </mat-sidenav>
+      <mat-sidenav-content class="main-content">
+        <router-outlet></router-outlet>
+      </mat-sidenav-content>
     </mat-sidenav-container>
-</div>
+  </div>
+</ng-container>
+
+<ng-template #bare>
+  <router-outlet></router-outlet>
+</ng-template>
