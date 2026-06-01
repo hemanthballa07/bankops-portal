@@ -67,10 +67,15 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 5 (merchant field) + Step 6b 
   - **Incident Console**: imported shared `variables`+`mixins`; remapped the local `:host` "Chase-inspired" tokens to design-system values; gave the search/KPI/results cards the bordered-panel convention (`$border-radius-xl`, `$color-border`, no box-shadow); mapped log-level + status tints to `$color-error/warning/info-bg`; tokenized `white` surfaces. KPI icon gradients preserved (intentional accent visuals).
   - **Audit Trail (`audit-timeline`)**: converted plain `.css` → tokenized `.scss` (rail/dot → `$color-border`/`$chrome-accent`; **diff colors preserved** old=`$color-error` strikethrough / new=`$color-success`); repointed `styleUrl`; removed the old `.css`.
   - `ng build` clean; **19/19 specs green**. (Pre-existing 6kb component-style *warning* on incident-console unchanged in kind; well under the 10kb error cap.)
+- **Reports & Analytics screen — Step 4 new screen (2026-06-01)** — commits `dd1c288` (backend), `3361862` (frontend)
+  - New ops-wide read endpoint `GET /api/reports/summary` → `ReportSummaryDto` (`transactionsByStatus`/`casesByState`/`casesBySeverity` via `GROUP BY` count queries on `TransactionRepository`/`SupportCaseRepository`, **reusing** `CaseService.getKpis()`, + totals). `ReportsController`/`ReportsService` added; `SecurityConfig` gets `/reports/** → hasAnyRole(USER,SUPPORT)`.
+  - New `/reports` route + OPERATIONS nav entry; `ReportsComponent` renders KPI cards + lightweight **CSS bar charts** (no charting dependency — matches the `mat-list`/KPI approach), tokenized; loading/empty states.
+  - Built via the full loop (plan → critique×2 ⇄ patch → impl): critique caught a must-fix (test seed omitted required `customer`) + 4 should-fix (absolute `environment.apiUrl`, nav class, flaky `findAll()` ordering, missing `/reports` matcher).
+  - **158 backend tests green** (new `ReportsIntegrationTest`) + `ng build` clean + 19/19 specs. **Live-proven**: seeded HELD+COMPLETED → `summary` returned `{COMPLETED:1, HELD:1}`, `casesBySeverity {HIGH:1}`, `casesByState {NEW:1}`, reused `caseKpis`, totals 2/1.
 
 ## In progress
 - **Step 4 — all existing screens now on the dark-chrome design system** (Incident Console + Audit Trail tokenized 2026-06-01). Remaining Step-4 work is net-new screens:
-  - New screens: Reports & Analytics, Admin settings (fraud rules, SLA config, agent management), Notifications rail
+  - New screens: Admin settings (fraud rules, SLA config, agent management), Notifications rail (Reports & Analytics done 2026-06-01)
 
 ## Next
 - New screens (Step-4 backlog): Reports & Analytics, Admin settings (fraud rules / SLA / agents), Notifications rail.
