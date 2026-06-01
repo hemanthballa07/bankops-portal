@@ -1,62 +1,51 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute } from '@angular/router';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { of, throwError } from 'rxjs';
 import { IncidentConsoleComponent } from './incident-console.component';
 import { IncidentService } from '../../services/incident.service';
-import { of, throwError } from 'rxjs';
-import { IncidentResponse } from '../../models/incident.model';
+import { IncidentResponse, IncidentSummary } from '../../models/incident.model';
 
 describe('IncidentConsoleComponent', () => {
   let component: IncidentConsoleComponent;
   let fixture: ComponentFixture<IncidentConsoleComponent>;
   let incidentService: jasmine.SpyObj<IncidentService>;
 
+  // Minimal valid IncidentResponse — transaction/case_ are optional and omitted
+  // so the mock stays decoupled from the Transaction/SupportCase model shapes.
   const mockIncidentResponse: IncidentResponse = {
     correlationId: 'test-correlation-id-123',
-    transaction: {
-      id: 1,
-      accountId: 1,
-      type: 'DEPOSIT',
-      amount: 100,
-      status: 'COMPLETED',
-      correlationId: 'test-correlation-id-123',
-      createdAt: '2025-01-15T10:30:00Z'
-    },
-    case_: {
-      id: 1,
-      customerId: 1,
-      status: 'INVESTIGATING',
-      severity: 'HIGH',
-      summary: 'Test case',
-      createdAt: '2025-01-15T10:30:00Z',
-      updatedAt: '2025-01-15T10:30:00Z'
-    },
     logEvents: [
-      {
-        id: 1,
-        correlationId: 'test-correlation-id-123',
-        level: 'INFO',
-        message: 'Transaction created',
-        contextJson: '{"accountId": 1, "amount": 100}',
-        createdAt: '2025-01-15T10:30:00Z'
-      },
-      {
-        id: 2,
-        correlationId: 'test-correlation-id-123',
-        level: 'INFO',
-        message: 'Balance updated',
-        contextJson: '{"previousBalance": 0, "newBalance": 100}',
-        createdAt: '2025-01-15T10:30:01Z'
-      }
-    ]
+      { id: 1, correlationId: 'test-correlation-id-123', level: 'INFO', message: 'Transaction created', contextJson: '{"accountId":1}', createdAt: '2025-01-15T10:30:00Z' },
+      { id: 2, correlationId: 'test-correlation-id-123', level: 'INFO', message: 'Balance updated', createdAt: '2025-01-15T10:30:01Z' },
+    ],
+  };
+
+  const mockSummary: IncidentSummary = {
+    id: 'incident-1',
+    timestamp: '2025-01-15T10:30:00Z',
+    service: 'transaction-service',
+    endpoint: '/api/accounts/*/transactions',
+    status: 200,
+    latency: 120,
+    correlationId: 'test-correlation-id-123',
+    actor: 'user',
+    severity: 'SEV4',
+    statusText: 'COMPLETED',
   };
 
   beforeEach(async () => {
-    const incidentServiceSpy = jasmine.createSpyObj('IncidentService', ['getIncidentByCorrelationId']);
+    const incidentServiceSpy = jasmine.createSpyObj<IncidentService>('IncidentService', ['getIncidentByCorrelationId']);
 
     await TestBed.configureTestingModule({
       imports: [IncidentConsoleComponent],
       providers: [
-        { provide: IncidentService, useValue: incidentServiceSpy }
-      ]
+        provideNoopAnimations(), // MatSidenav registers @transform animation host listeners
+        { provide: IncidentService, useValue: incidentServiceSpy },
+        // Component injects ActivatedRoute in its constructor; createComponent
+        // needs a provider. ngOnInit only reads snapshot.paramMap.get(...).
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => null } } } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(IncidentConsoleComponent);
@@ -68,67 +57,51 @@ describe('IncidentConsoleComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should render timeline from mocked API response', () => {
+  it('searchIncidents() maps an incident response into the results table', () => {
     incidentService.getIncidentByCorrelationId.and.returnValue(of(mockIncidentResponse));
-    
-    component.correlationId = 'test-correlation-id-123';
-    component.searchIncident();
-    fixture.detectChanges();
 
-    expect(component.incident).toBeDefined();
-    expect(component.incident?.logEvents.length).toBe(2);
-    
-    const logItems = fixture.nativeElement.querySelectorAll('.log-item');
-    expect(logItems.length).toBe(2);
+    component.filters.correlationId = 'test-correlation-id-123';
+    component.searchIncidents();
+
+    expect(incidentService.getIncidentByCorrelationId).toHaveBeenCalledWith('test-correlation-id-123');
+    expect(component.incidents.length).toBe(1);
+    expect(component.incidents[0].correlationId).toBe('test-correlation-id-123');
+    expect(component.totalElements).toBe(1);
+    expect(component.loading).toBeFalse();
   });
 
-  it('should display transaction details', () => {
-    incidentService.getIncidentByCorrelationId.and.returnValue(of(mockIncidentResponse));
-    
-    component.correlationId = 'test-correlation-id-123';
-    component.searchIncident();
-    fixture.detectChanges();
-
-    const transactionSection = fixture.nativeElement.querySelector('.transaction-section');
-    expect(transactionSection).toBeTruthy();
-    expect(transactionSection.textContent).toContain('DEPOSIT');
-    expect(transactionSection.textContent).toContain('$100.00');
-  });
-
-  it('should display case details when available', () => {
-    incidentService.getIncidentByCorrelationId.and.returnValue(of(mockIncidentResponse));
-    
-    component.correlationId = 'test-correlation-id-123';
-    component.searchIncident();
-    fixture.detectChanges();
-
-    const caseSection = fixture.nativeElement.querySelector('.case-section');
-    expect(caseSection).toBeTruthy();
-    expect(caseSection.textContent).toContain('INVESTIGATING');
-  });
-
-  it('should handle error when incident not found', () => {
+  it('searchIncidents() sets error when the incident is not found', () => {
     incidentService.getIncidentByCorrelationId.and.returnValue(
       throwError(() => ({ error: { message: 'Incident not found' } }))
     );
-    
-    component.correlationId = 'invalid-id';
-    component.searchIncident();
-    fixture.detectChanges();
+
+    component.filters.correlationId = 'invalid-id';
+    component.searchIncidents();
 
     expect(component.error).toBe('Incident not found');
-    expect(component.incident).toBeUndefined();
+    expect(component.loading).toBeFalse();
   });
 
-  it('should apply correct CSS class based on log level', () => {
+  it('viewIncidentDetail() opens the drawer and loads the detail', () => {
+    incidentService.getIncidentByCorrelationId.and.returnValue(of(mockIncidentResponse));
+
+    component.viewIncidentDetail(mockSummary);
+
+    expect(component.drawerOpen).toBeTrue();
+    expect(component.selectedIncident).toBe(mockSummary);
+    expect(component.incidentDetail).toEqual(mockIncidentResponse);
+  });
+
+  it('getLogLevelClass maps log levels to css classes', () => {
     expect(component.getLogLevelClass('ERROR')).toBe('log-error');
     expect(component.getLogLevelClass('WARN')).toBe('log-warn');
     expect(component.getLogLevelClass('INFO')).toBe('log-info');
     expect(component.getLogLevelClass('DEBUG')).toBe('log-debug');
   });
+
+  it('getStatusClass maps HTTP status codes to css classes', () => {
+    expect(component.getStatusClass(200)).toBe('status-success');
+    expect(component.getStatusClass(404)).toBe('status-warning');
+    expect(component.getStatusClass(500)).toBe('status-error');
+  });
 });
-
-
-
-
-
