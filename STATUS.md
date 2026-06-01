@@ -36,10 +36,16 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 4 (UI redesign) in progress.
   - Seed (commit `46337d1`): `LocalDataSeeder` — `@Profile("local")` `CommandLineRunner`, idempotent (`count()==0`), seeds Customer id=1 + Account id=1 (CHEQUING, balance 250000) on empty H2. Root-cause fix for account 1 vanishing on every restart (in-memory H2 + no data seeding).
   - Fluxa verified the full in-browser chain with `Origin :3001`: POST→202/HELD → gRPC FLAG 24.5ms → P1 case → console `GET ?status=HELD` (real data, no mock fallback) → SSE match → release preflight 200 → release POST 200/RELEASED → queue cleared. (Network-contract CORS leg proven; pixel UI click-through skipped — a truthful real-data screenshot needs a standalone Playwright driver, and Fluxa's network-level proof was accepted. The MCP Playwright + headless-Chrome attempts only rendered the UI's built-in demo data.)
   - Endpoint 500-fixes (commit `9d16be1`): added `GET /accounts` (collection, `AccountService.getAllAccounts`) and `GET /accounts/{id}/transactions/{txId}` (single, `TransactionService.getTransaction`, reusing the release/reject account-match check). Both were 500 (no handler), now 200; verified live. Console uses neither.
+- **Auth / login cluster (2026-05-31)**
+  - Interceptor RBAC fix: `authInterceptor` now attaches the stored `AUTH_BASIC_V2` session credential (per-user Basic) instead of hardcoded `user:password`, so RBAC is real; it never clobbers a caller-set `Authorization` header.
+  - `authGuard` (`CanActivateFn`) redirects unauthenticated users to `/login`; all ops routes guarded, `/login` route added.
+  - Ops shell now renders only when authenticated (`showShell$` off the login route); avatar binds to `currentUser$.username`; logout button wired.
+  - Dark-chrome login screen (`$chrome-*` palette: bg `#0F172A`, card `#1E293B`, accent `#3B82F6`); already-authenticated users redirect to `/dashboard`.
+  - Startup hydration: `AuthService` resolves real `username`+`roles` from `/whoami` on reload (deferred microtask), so reloads no longer show "User"/empty roles.
+  - 6 new unit specs (interceptor 4 + guard 2) pass headless; `ng build` clean. (Full `npm test` still blocked by the pre-existing `incident-console.component.spec.ts` compile error — out of scope.)
 
 ## In progress
 - **Step 4 remaining screens** (~11 of 15+ still to build):
-  - Auth / login screen (no route exists yet)
   - Redesign existing screens to match new dark chrome: Customers, Account Detail, Cases, Incident Console, Audit Trail
   - New screens: Reports & Analytics, Admin settings (fraud rules, SLA config, agent management), Notifications rail
 
