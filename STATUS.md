@@ -43,10 +43,12 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 4 (UI redesign) in progress.
   - Dark-chrome login screen (`$chrome-*` palette: bg `#0F172A`, card `#1E293B`, accent `#3B82F6`); already-authenticated users redirect to `/dashboard`.
   - Startup hydration: `AuthService` resolves real `username`+`roles` from `/whoami` on reload (deferred microtask), so reloads no longer show "User"/empty roles.
   - 6 new unit specs (interceptor 4 + guard 2) pass headless; `ng build` clean. (Full `npm test` still blocked by the pre-existing `incident-console.component.spec.ts` compile error — out of scope.)
+- **Cases screen redesign (2026-05-31)** — commit `a2fab75`
+  - Replaced pre-redesign hardcoded `white` surfaces with semantic `$color-bg-primary` and applied the redesigned `.panel` convention (bordered, `$border-radius-xl`, no box-shadow) to the cases table, details drawer, note cards, and create-case form. Matches the Customers reference; `ng build` clean.
 
 ## In progress
 - **Step 4 remaining screens** (~11 of 15+ still to build):
-  - Redesign existing screens to match new dark chrome: Customers, Account Detail, Cases, Incident Console, Audit Trail
+  - Redesign existing screens to match new dark chrome: Account Detail, Incident Console, Audit Trail
   - New screens: Reports & Analytics, Admin settings (fraud rules, SLA config, agent management), Notifications rail
 
 ## Next
