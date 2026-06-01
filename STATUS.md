@@ -49,10 +49,12 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 4 (UI redesign) in progress.
   - `incident-console.component.spec.ts` had a compile error (tested removed members `correlationId`/`searchIncident`/`incident`, never provided `ActivatedRoute`) that blocked Karma from running the ENTIRE suite (one type-check pass). Rewrote it against the current API (`filters.correlationId`, `searchIncidents()`, `incidentDetail`, `viewIncidentDetail`, `getStatusClass`) + provided `ActivatedRoute`/`NoopAnimations`.
   - `transaction-form.component.spec.ts` (7 tests) failed on `MatFormField`'s `@transitionMessages` animation — added `provideNoopAnimations()`.
   - `npm test` now runs **19/19 green** (was 0 executable). Only backend tests remain excluded (see Next).
+- **Account Detail screen redesign (2026-06-01)** — commit `b843208`
+  - The styles predated the redesign (no design-system import; raw px + hardcoded neutral hex). Imported `variables`+`mixins` and tokenized spacing/surfaces/neutral text (`#f5f5f5` → `$color-bg-secondary`; greys → `$color-text-secondary/tertiary`). Intentional Step-3 fraud-status badge colors (HELD amber / RELEASED / REJECTED) + held-row highlight preserved verbatim. `ng build` clean. (Conservative pass — Account Detail uses `mat-card`s, not custom panels, so no structural panel overhaul.)
 
 ## In progress
 - **Step 4 remaining screens** (~11 of 15+ still to build):
-  - Redesign existing screens to match new dark chrome: Account Detail, Incident Console, Audit Trail
+  - Redesign existing screens to match new dark chrome: Incident Console, Audit Trail
   - New screens: Reports & Analytics, Admin settings (fraud rules, SLA config, agent management), Notifications rail
 
 ## Next
