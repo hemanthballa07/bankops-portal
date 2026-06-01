@@ -1,7 +1,7 @@
 # STATUS — bankops-portal
 
 ## Current phase
-Trifecta Steps 1–3 + Step A (e2e) complete. Step 5 (merchant field) DONE. Step 4 (UI redesign) in progress.
+Trifecta Steps 1–3 + Step A (e2e) complete. Step 5 (merchant field) + Step 6b (distributed tracing) DONE. Step 4 (UI redesign) in progress.
 
 - **Step 1 (fluxa fraud-grpc)** — shipped 2026-05-30, commit `d71210f` (fluxa repo, local-only). Service live on `:9095`, rules-only eval, k6 p99 ~26ms.
 - **Step 2 (bankops ↔ fluxa gRPC)** — code-complete 2026-05-27. Full gRPC integration with FAIL_OPEN/FAIL_CLOSED policy.
@@ -10,6 +10,7 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 5 (merchant field) DONE. Step
 - **Step 4 (UI redesign)** — IN PROGRESS 2026-05-30. Dark sidebar + Dashboard + Fraud Review Center built. See "In progress" for what's left.
 - **Trifecta console e2e (CORS + durable seed)** — CLOSED 2026-05-31. trifecta-console (`:3001`) → bankops verified in-browser end-to-end; commits `03749e3` (CORS), `46337d1` (seeder).
 - **Step 5 (merchant field → Fluxa `blocked_merchant`)** — DONE 2026-06-01. `merchant` threaded DTO→service→gate (commits `b33268c`, `ae12c24`); live e2e proved `Amazon Marketplace` $42 → HELD/P1 while control `Joes Coffee` $42 → COMPLETED.
+- **Step 6b (OpenTelemetry distributed tracing)** — DONE 2026-06-01 (commit `c076630`). Micrometer Tracing + OTel bridge + a `GrpcTelemetry` client interceptor propagate W3C trace context over the Fluxa gRPC hop. Live-proven: one trace `af3c89e6…` with **11 spans across `bankops-portal` + `fraud-grpc` + `ml-scorer`** (Java→Go→Python) in the shared Jaeger. Reported to Fluxa (trifecta msg 33).
 
 ## Done
 - Full `/understand` analysis run (2026-05-26, commit `9a461977`)
@@ -58,6 +59,10 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 5 (merchant field) DONE. Step
   - Tests: **156 backend + 19 frontend green.** New `TransactionServiceTest` forwarding + UNSPECIFIED-fallback tests; new `FluxaFraudClientTest` regression test asserting `merchant` reaches `EvaluateRequest`.
   - **Live e2e** vs Fluxa `:9095` (fresh backend on `:8081`, real RPC): `Amazon Marketplace` $42 (under the 500 amount threshold) → **202 HELD** → P1/HIGH case summary `merchant="Amazon Marketplace" is blocked`; control `Joes Coffee` $42 → **201 COMPLETED**. Same amount, opposite outcome ⇒ merchant is the decider. corr `f32889d1-c8ab-46be-8492-fef55109f48d`. Reported to Fluxa (trifecta msg 31).
   - Fluxa blocklist (read from `../fluxa/rules.yaml`, **exact-match**): `Amazon Marketplace`, `Walmart Online`, `Target`.
+- **OpenTelemetry distributed tracing — Step 6b (2026-06-01)** — commit `c076630`
+  - Deps: `micrometer-tracing-bridge-otel` + `opentelemetry-exporter-otlp` + `opentelemetry-grpc-1.6` (alpha BOM pinned `1.31.0-alpha` to match SB 3.2's OTel 1.31.0). HTTP server spans auto-instrumented; a `GrpcTelemetry` client interceptor on the Fluxa `ManagedChannel` (guarded by `ObjectProvider<OpenTelemetry>`) injects the W3C `traceparent` so Fluxa's otelgrpc server joins the trace.
+  - Config: sampling `1.0` local / `0.0` default / **`management.tracing.enabled: false` in test** (hermetic — 157 tests green incl. a new `FluxaTracePropagationTest` asserting `traceparent` injection). OTLP/HTTP → shared Jaeger `:4318`. `traceId`/`spanId` added to log patterns.
+  - **Live proof:** trace `af3c89e6a95628f4c4fdc731d0ce45ac` — 11 spans, services `bankops-portal` + `fraud-grpc` + `ml-scorer` in one trace (Java→Go→Python); deposit returned 201 (tracing fail-safe on the hot path). Reported to Fluxa (trifecta msg 33).
 
 ## In progress
 - **Step 4 remaining screens** (~11 of 15+ still to build):
@@ -90,5 +95,5 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 5 (merchant field) DONE. Step
 - Backend: `localhost:8080/api` (requires `-Dspring-boot.run.profiles=local`)
 - Frontend: `localhost:4200` (ng serve already running)
 - Tests: `cd backend && JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home mvn test` — fully green as of 2026-06-01 (156 tests, incl. `SlaServiceTest`/`AssignmentServiceTest`/`TimelineServiceTest`; the old "pom-excluded / broken" note for those three is stale).
-- Fluxa stack: `cd ../fluxa && make up` (fraud-grpc :9095, `amount_threshold=500.00`)
+- Fluxa stack: `cd ../fluxa && make up` (fraud-grpc :9095, `amount_threshold=500.00`; shared **Jaeger** UI :16686 + OTLP :4318/:4317). bankops exports traces to Jaeger :4318 when run with the `local` profile; view a trace at `http://localhost:16686/trace/<traceID>`.
 - Roles: ADMIN (full), SUPPORT (ops+audit), USER (read-only)
