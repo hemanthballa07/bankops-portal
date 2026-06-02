@@ -1,0 +1,38 @@
+<aside class="notifications-rail" [class.open]="open">
+  <header class="rail-header">
+    <h2>Notifications</h2>
+    <div class="rail-header-actions">
+      <button mat-icon-button matTooltip="Refresh" (click)="onRefresh()">
+        <mat-icon>refresh</mat-icon>
+      </button>
+      <button mat-icon-button matTooltip="Close" (click)="onClose()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  <div class="rail-body">
+    <div *ngIf="error" class="rail-error">Couldn’t refresh — showing last known state.</div>
+
+    <div *ngIf="alertItems.length === 0 && !loading" class="rail-empty">
+      <mat-icon>check_circle</mat-icon>
+      <p>All clear</p>
+    </div>
+
+    <ul class="rail-list">
+      <li *ngFor="let item of alertItems" class="rail-item" [class]="severityClass(item.severity)"
+          (click)="openItem(item)">
+        <mat-icon class="item-icon">{{ severityIcon(item.severity) }}</mat-icon>
+        <div class="item-text">
+          <span class="item-title">{{ item.title }}</span>
+          <span class="item-detail">{{ item.detail }}</span>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="rail-footer" *ngIf="backlog as b">
+    <mat-icon>inbox</mat-icon>
+    <span>{{ b.detail }}</span>
+  </footer>
+</aside>

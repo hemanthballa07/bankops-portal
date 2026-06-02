@@ -1,0 +1,79 @@
+@import '../../../styles/variables';
+
+.notifications-rail {
+  position: fixed;
+  top: $header-height;
+  right: 0;
+  bottom: 0;
+  width: 360px;
+  background: $color-bg-primary;
+  border-left: $border-width solid $color-border;
+  box-shadow: $elevation-lg;
+  transform: translateX(100%);
+  transition: transform $transition-normal;
+  display: flex;
+  flex-direction: column;
+  z-index: $z-index-modal;
+
+  &.open { transform: translateX(0); }
+
+  .rail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-md $spacing-lg;
+    border-bottom: $border-width solid $color-border;
+    background: $color-bg-secondary;
+
+    h2 { margin: 0; font-size: $font-size-lg; }
+  }
+
+  .rail-body { flex: 1; overflow-y: auto; }
+
+  .rail-error {
+    padding: $spacing-sm $spacing-lg;
+    color: $color-warning;
+    font-size: $font-size-sm;
+  }
+
+  .rail-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: $spacing-2xl $spacing-lg;
+    color: $color-text-secondary;
+    mat-icon { color: $color-success; }
+  }
+
+  .rail-list { list-style: none; margin: 0; padding: 0; }
+
+  .rail-item {
+    display: flex;
+    gap: $spacing-sm;
+    padding: $spacing-md $spacing-lg;
+    border-bottom: $border-width solid $color-border;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+
+    &:hover { background: $color-bg-secondary; }
+    &.sev-critical { border-left-color: $color-error; .item-icon { color: $color-error; } }
+    &.sev-warning  { border-left-color: $color-warning; .item-icon { color: $color-warning; } }
+    &.sev-info     { border-left-color: $color-info; .item-icon { color: $color-info; } }
+
+    .item-text { display: flex; flex-direction: column; }
+    .item-title { font-size: $font-size-md; color: $color-text-primary; }
+    .item-detail { font-size: $font-size-sm; color: $color-text-secondary; }
+  }
+
+  .rail-footer {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: $spacing-md $spacing-lg;
+    border-top: $border-width solid $color-border;
+    background: $color-bg-secondary;
+    color: $color-text-secondary;
+    font-size: $font-size-sm;
+  }
+}
