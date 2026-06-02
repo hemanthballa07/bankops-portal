@@ -4,7 +4,10 @@ import com.bankops.portal.client.fluxa.FluxaEvalOutcome;
 import com.bankops.portal.client.fluxa.FluxaFraudClient;
 import com.bankops.portal.client.fluxa.FluxaUnavailableException;
 import com.bankops.portal.client.fluxa.FraudFlagDto;
+import com.bankops.portal.client.fluxguard.FluxguardRateLimitClient;
+import com.bankops.portal.client.fluxguard.FluxguardRateLimitOutcome;
 import com.bankops.portal.config.FluxaProperties;
+import com.bankops.portal.exception.FluxguardRateLimitException;
 import com.bankops.portal.dto.CreateTransactionRequest;
 import com.bankops.portal.dto.MonthlySpendingDto;
 import com.bankops.portal.dto.PagedResponse;
@@ -52,6 +55,7 @@ public class TransactionService {
     private final AuditEventService auditEventService;
     private final FluxaFraudClient fluxaFraudClient;
     private final FluxaProperties fluxaProperties;
+    private final FluxguardRateLimitClient fluxguardRateLimitClient;
     private final CaseService caseService;
 
     // Self-reference injected via Spring proxy so that @Transactional on withdrawOnce
@@ -104,6 +108,16 @@ public class TransactionService {
         // Generate correlationId once; pass into withdrawOnce so optimistic-lock
         // retries reuse the same id (single Fluxa event per logical withdrawal).
         String correlationId = UUID.randomUUID().toString();
+
+        // Rate-limit gate (fluxguard) BEFORE the fraud RPC: a rate-limited request
+        // fails fast with 429 and never reaches Fluxa. Fail-open on any other outcome.
+        String rlSubject = resolveSubject();
+        FluxguardRateLimitOutcome rl = fluxguardRateLimitClient.checkLimit(
+                correlationId, rlSubject, idempotencyKey);
+        if (rl instanceof FluxguardRateLimitOutcome.Denied d) {
+            throw new FluxguardRateLimitException(d.retryAfterMs());
+        }
+
         FluxaEvalOutcome fluxaOutcome = fluxaFraudClient.evaluate(
                 correlationId, accountId, request.getAmount(),
                 FLUXA_DEFAULT_CURRENCY, resolveMerchant(request), Instant.now());
@@ -263,6 +277,17 @@ public class TransactionService {
     }
 
     /**
+     * Subject for the fluxguard rate-limit policy: the authenticated principal name,
+     * or "anonymous" when no authentication is present in the security context.
+     */
+    private static String resolveSubject() {
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext()
+                        .getAuthentication();
+        return auth != null ? auth.getName() : "anonymous";
+    }
+
+    /**
      * Acts on a precomputed {@link FluxaEvalOutcome}. Returns a non-null DTO when
      * the outcome forces an early return (HELD on flag); returns null when the
      * caller should fall through to the success-path tail. Throws to surface
@@ -380,6 +405,15 @@ public class TransactionService {
         // Fluxa fraud-eval gate. When disabled we short-circuit to keep the code
         // path identical to pre-trifecta behaviour (legacy tests rely on this).
         if (fluxaProperties.enabled()) {
+            // Rate-limit gate (fluxguard) BEFORE the fraud RPC: a rate-limited request
+            // fails fast with 429 and never reaches Fluxa. The deposit path has no
+            // idempotency key, so pass empty string. Fail-open on any other outcome.
+            FluxguardRateLimitOutcome rl = fluxguardRateLimitClient.checkLimit(
+                    correlationId, resolveSubject(), "");
+            if (rl instanceof FluxguardRateLimitOutcome.Denied d) {
+                throw new FluxguardRateLimitException(d.retryAfterMs());
+            }
+
             FluxaEvalOutcome fluxaOutcome = fluxaFraudClient.evaluate(
                     correlationId, accountId, request.getAmount(),
                     FLUXA_DEFAULT_CURRENCY, resolveMerchant(request), Instant.now());

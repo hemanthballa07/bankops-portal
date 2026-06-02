@@ -51,6 +51,14 @@ bankops:
     deadline: PT0.3S
     withdrawal: FAIL_CLOSED
     deposit: FAIL_OPEN
+  # Fluxguard rate-limit gRPC client (see com.bankops.portal.config.FluxguardProperties).
+  # Defaults: feature-flag off. Rate limiting is unconditionally fail-open — a
+  # fluxguard outage never blocks a transaction. Profile overlays override these.
+  fluxguard:
+    enabled: false
+    host: localhost
+    port: 9099
+    deadline: PT0.15S
 
 management:
   endpoints:

@@ -7,6 +7,12 @@ bankops:
     withdrawal: FAIL_OPEN
     deposit: FAIL_OPEN
     deadline: PT2S
+  # Rate-limit gate enabled for local dev (fail-open is unconditional in the client).
+  fluxguard:
+    enabled: true
+    host: localhost
+    port: 9099
+    deadline: PT2S
 
 # Distributed tracing: sample everything locally and export to Fluxa's shared
 # Jaeger (OTLP/HTTP). Disabled in test; 0% sampling by default.

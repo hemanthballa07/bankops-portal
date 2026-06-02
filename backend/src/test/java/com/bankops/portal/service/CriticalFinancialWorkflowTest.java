@@ -52,6 +52,9 @@ class CriticalFinancialWorkflowTest {
     private FluxaFraudClient fluxaFraudClient;
 
     @Mock
+    private com.bankops.portal.client.fluxguard.FluxguardRateLimitClient fluxguardRateLimitClient;
+
+    @Mock
     private CaseService caseService;
 
     private final FluxaProperties fluxaProperties = new FluxaProperties(
@@ -87,7 +90,8 @@ class CriticalFinancialWorkflowTest {
 
         transactionService = new TransactionService(
                 transactionRepository, accountRepository, loggingService,
-                auditEventService, fluxaFraudClient, fluxaProperties, caseService);
+                auditEventService, fluxaFraudClient, fluxaProperties,
+                fluxguardRateLimitClient, caseService);
     }
 
     // ========== CRITICAL: Transaction Status Transitions ==========

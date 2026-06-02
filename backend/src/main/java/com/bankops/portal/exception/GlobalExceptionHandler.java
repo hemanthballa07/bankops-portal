@@ -78,6 +78,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
     }
 
+    @ExceptionHandler(FluxguardRateLimitException.class)
+    public ResponseEntity<ErrorResponse> handleFluxguardRateLimit(
+            FluxguardRateLimitException ex, WebRequest request) {
+        long retryAfterSeconds = (long) Math.ceil(ex.getRetryAfterMs() / 1000.0);
+        ErrorResponse error = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.TOO_MANY_REQUESTS.value())
+                .error("Too Many Requests")
+                .message(ex.getMessage())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .build();
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(retryAfterSeconds))
+                .body(error);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex, WebRequest request) {

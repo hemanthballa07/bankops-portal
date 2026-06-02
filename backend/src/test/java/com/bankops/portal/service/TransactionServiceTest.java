@@ -54,6 +54,9 @@ class TransactionServiceTest {
     private FluxaFraudClient fluxaFraudClient;
 
     @Mock
+    private com.bankops.portal.client.fluxguard.FluxguardRateLimitClient fluxguardRateLimitClient;
+
+    @Mock
     private CaseService caseService;
 
     // FluxaProperties is a record (final class) — use a real instance with Fluxa disabled
@@ -90,7 +93,8 @@ class TransactionServiceTest {
 
         transactionService = new TransactionService(
                 transactionRepository, accountRepository, loggingService,
-                auditEventService, fluxaFraudClient, fluxaProperties, caseService);
+                auditEventService, fluxaFraudClient, fluxaProperties,
+                fluxguardRateLimitClient, caseService);
     }
 
     // ========== Successful Transaction Tests ==========
