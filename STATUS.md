@@ -95,13 +95,19 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 5 (merchant field) + Step 6b 
   - **Phase 2 — LOGIN** (commit `ce8d82f`): `/whoami` brute-force throttle — `WhoamiRateLimitFilter.checkLogin` + `LoginFailureAuthEntryPoint.reportLoginFailure` (wrong-creds-only), `client_ip` = socket peer (`getRemoteAddr()`, NOT `X-Forwarded-For`).
   - Proto frozen by fluxguard (trifecta msg 41), used verbatim — no contract change. **186 backend tests green** (new: 5 `FluxguardRateLimitClientTest` OPS cases asserting policy/subject/deny/fail-open/disabled + 2 `OpsRateLimitGateIntegrationTest` cases proving release/reject→429 with no state mutation). **Unpushed**: branch is ahead of `origin/main` by all 3 commits (`5175180`, `ce8d82f`, + this) — user pushes/merges (`git push` denied to Claude).
 
+- **Notifications rail — Step-4 new screen (2026-06-02)** — branch `feat/notifications-rail`
+  - New thin server-side aggregate `GET /api/notifications` → `NotificationsService` **derives a prioritized feed on-read** (no entity, self-clearing) from HELD transactions + active cases + `CaseService.getKpis()`. Categories `FRAUD_HOLD` (CRITICAL) / `CASE_UNASSIGNED` (WARNING) / `SLA_RISK` (BREACHED→CRITICAL, AT_RISK→WARNING) / `BACKLOG` (INFO footer). Per-section fail-soft (one bad query degrades only its section); **one item per case** (SLA risk beats unassigned-HIGH); 50-item cap with true `counts` before the cap. `NotificationsController` + `/notifications/**`→`hasAnyRole(USER,SUPPORT)`.
+  - Frontend: `NotificationService` (30s **visibility-aware** poll via `timer(0,…)`+`refresh$`+`visibilitychange`, last-good on error, single initial fetch) + standalone `NotificationsRailComponent` (slide-out, severity-colored items, deep-link + close, backlog footer, empty/error states) + bell **badge = actionable (CRITICAL+WARNING)** wired in `app.component` (poll subscribed in `ngOnInit`).
+  - Built via the full loop: brainstorm → spec → `writing-plans` → `critique-plan`×2 ⇄ `patch-plan` (converged READY: caught a non-deterministic polling test → `fakeAsync`, a phantom app-spec reference, and a double initial-fetch). **193 backend tests** (new `NotificationsServiceTest` 5 + `NotificationsIntegrationTest` 2) + **198 frontend specs** (new service 2 + component 4) green; `ng build` clean (only pre-existing budget/strictness warnings). **Unpushed** — user pushes/merges (`git push` denied to Claude).
+
 ## In progress
-- **Step 4 — all existing screens now on the dark-chrome design system** (Incident Console + Audit Trail tokenized 2026-06-01). Remaining Step-4 work is net-new screens:
-  - New screens: Notifications rail (Reports & Analytics + Admin·Agent-Management done 2026-06-01; fraud-rules admin lives in Fluxa's rules.yaml — cross-repo; SLA-config admin deferred — durations are hardcoded in the `SlaPriority` enum, see Open decisions)
+- **Step 4 — all existing screens on the dark-chrome design system + the net-new screens** (Reports & Analytics, Admin·Agent-Management, Notifications rail all done). Remaining Step-4 candidates are lower-priority/deferred:
+  - SLA-config admin deferred (durations hardcoded in the `SlaPriority` enum — needs a config store + SLA-engine touch, see Open decisions); fraud-rules admin is cross-repo (Fluxa's `rules.yaml`).
 
 ## Next
-- New screens (Step-4 backlog): Reports & Analytics, Admin settings (fraud rules / SLA / agents), Notifications rail.
+- Step-4 net-new screens (Reports & Analytics, Admin·Agent-Management, Notifications rail) are all DONE. Remaining backlog is product-call work needing a brainstorm: **SLA-config admin** (deferred — durations hardcoded in `SlaPriority`; needs a config store + SLA-engine touch, full loop + care).
 - Optional (Fluxa Step 5a, trifecta msg 29): surface the advisory `ml_score` as an "ML risk" chip on HELD txns/cases — needs re-vendoring the proto + regenerating stubs first. See Open decisions.
+- Notifications rail v2 (deferred): system-incident (ERROR-log) alert category — distinct system-health axis from the work-queue; data not cleanly queryable yet.
 
 ## Open decisions
 - Should shadow-mode swallow `InvalidArgument` (current) or surface 400 in observer mode?
