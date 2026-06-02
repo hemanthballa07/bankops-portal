@@ -117,6 +117,44 @@ public class FluxguardRateLimitClient {
         }
     }
 
+    public FluxguardRateLimitOutcome checkOpsRelease(String requestId, String subject) {
+        return checkOps(requestId, subject, Policy.POLICY_OPS_RELEASE);
+    }
+
+    public FluxguardRateLimitOutcome checkOpsReject(String requestId, String subject) {
+        return checkOps(requestId, subject, Policy.POLICY_OPS_REJECT);
+    }
+
+    /**
+     * Rate-limit a HELD-transaction ops action (release / reject), keyed by the acting
+     * principal ({@code subject}). Same fail-open contract as {@link #checkLimit}: any
+     * transport failure maps to {@link FluxguardRateLimitOutcome.Unavailable}.
+     */
+    private FluxguardRateLimitOutcome checkOps(String requestId, String subject, Policy policy) {
+        if (!props.enabled()) {
+            return new FluxguardRateLimitOutcome.Disabled();
+        }
+
+        CheckLimitRequest req = CheckLimitRequest.newBuilder()
+                .setRequestId(requestId)
+                .setPolicy(policy)
+                .setSubject(subject)
+                .build();
+
+        long startNanos = System.nanoTime();
+        try {
+            CheckLimitResponse resp = stub
+                    .withDeadlineAfter(props.deadline().toMillis(), MILLISECONDS)
+                    .checkLimit(req);
+            FluxguardRateLimitOutcome outcome = mapResponse(resp);
+            logOutcome(requestId, outcome, resp, startNanos);
+            return outcome;
+        } catch (StatusRuntimeException e) {
+            logError(requestId, e, startNanos);
+            return new FluxguardRateLimitOutcome.Unavailable();
+        }
+    }
+
     private FluxguardRateLimitOutcome mapResponse(CheckLimitResponse resp) {
         if (resp.getDecision() == Decision.DECISION_DENY) {
             return new FluxguardRateLimitOutcome.Denied(resp.getRetryAfterMs());

@@ -576,6 +576,15 @@ public class TransactionService {
     }
 
     public TransactionDto releaseTransaction(Long accountId, Long transactionId, String actorId, String notes) {
+        // Rate-limit gate (fluxguard, POLICY_OPS_RELEASE) BEFORE any DB work or mutation:
+        // a rate-limited ops action fails fast with 429 and never changes state. Keyed by
+        // the acting principal; fail-open on any non-Denied outcome.
+        FluxguardRateLimitOutcome opsRl = fluxguardRateLimitClient.checkOpsRelease(
+                UUID.randomUUID().toString(), resolveSubject());
+        if (opsRl instanceof FluxguardRateLimitOutcome.Denied d) {
+            throw new FluxguardRateLimitException(d.retryAfterMs());
+        }
+
         Transaction txn = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new IllegalArgumentException("Transaction not found: " + transactionId));
 
@@ -629,6 +638,15 @@ public class TransactionService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
     public TransactionDto rejectTransaction(Long accountId, Long transactionId, String actorId, String notes) {
+        // Rate-limit gate (fluxguard, POLICY_OPS_REJECT) BEFORE any DB work or mutation:
+        // a rate-limited ops action fails fast with 429 and never changes state. Keyed by
+        // the acting principal; fail-open on any non-Denied outcome.
+        FluxguardRateLimitOutcome opsRl = fluxguardRateLimitClient.checkOpsReject(
+                UUID.randomUUID().toString(), resolveSubject());
+        if (opsRl instanceof FluxguardRateLimitOutcome.Denied d) {
+            throw new FluxguardRateLimitException(d.retryAfterMs());
+        }
+
         Transaction txn = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new IllegalArgumentException("Transaction not found: " + transactionId));
 

@@ -159,6 +159,51 @@ class FluxguardRateLimitClientTest {
         assertThat(service.reportCallCount()).isEqualTo(1);
     }
 
+    @Test
+    void checkOpsRelease_allowResponse_setsPolicyOpsReleaseAndSubject() {
+        service.respondAllow();
+        FluxguardRateLimitOutcome outcome =
+                client(enabledProps).checkOpsRelease("ops-req-1", "support-agent");
+        assertThat(outcome).isInstanceOf(FluxguardRateLimitOutcome.Allow.class);
+        assertThat(service.lastCheckRequest().getPolicy()).isEqualTo(Policy.POLICY_OPS_RELEASE);
+        assertThat(service.lastCheckRequest().getSubject()).isEqualTo("support-agent");
+    }
+
+    @Test
+    void checkOpsRelease_denyResponse_mapsToDeniedWithRetryAfter() {
+        service.respondDeny(2500L);
+        FluxguardRateLimitOutcome outcome =
+                client(enabledProps).checkOpsRelease("ops-req-2", "support-agent");
+        assertThat(outcome).isInstanceOf(FluxguardRateLimitOutcome.Denied.class);
+        assertThat(((FluxguardRateLimitOutcome.Denied) outcome).retryAfterMs()).isEqualTo(2500L);
+    }
+
+    @Test
+    void checkOpsReject_allowResponse_setsPolicyOpsReject() {
+        service.respondAllow();
+        FluxguardRateLimitOutcome outcome =
+                client(enabledProps).checkOpsReject("ops-req-3", "support-agent");
+        assertThat(outcome).isInstanceOf(FluxguardRateLimitOutcome.Allow.class);
+        assertThat(service.lastCheckRequest().getPolicy()).isEqualTo(Policy.POLICY_OPS_REJECT);
+    }
+
+    @Test
+    void checkOpsRelease_serverError_mapsToUnavailable_failOpen() {
+        service.respondError(Status.UNAVAILABLE);
+        FluxguardRateLimitOutcome outcome =
+                client(enabledProps).checkOpsRelease("ops-req-4", "support-agent");
+        assertThat(outcome).isInstanceOf(FluxguardRateLimitOutcome.Unavailable.class);
+    }
+
+    @Test
+    void checkOpsReject_disabledFlag_shortCircuitsWithoutTouchingChannel() {
+        service.respondAllow();
+        FluxguardRateLimitOutcome outcome =
+                client(disabledProps).checkOpsReject("ops-req-5", "support-agent");
+        assertThat(outcome).isInstanceOf(FluxguardRateLimitOutcome.Disabled.class);
+        assertThat(service.callCount()).isZero();
+    }
+
     /**
      * In-process gRPC service whose response is settable per-test, counting calls so
      * the disabled-flag test can assert no RPC was made.
