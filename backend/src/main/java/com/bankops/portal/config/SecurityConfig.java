@@ -15,15 +15,24 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfigurationSource;
 
+import com.bankops.portal.client.fluxguard.LoginFailureAuthEntryPoint;
+import com.bankops.portal.client.fluxguard.WhoamiRateLimitFilter;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
 
         private final CorsConfigurationSource corsConfigurationSource;
+        private final WhoamiRateLimitFilter whoamiRateLimitFilter;
+        private final LoginFailureAuthEntryPoint loginFailureAuthEntryPoint;
 
-        public SecurityConfig(CorsConfigurationSource corsConfigurationSource) {
+        public SecurityConfig(CorsConfigurationSource corsConfigurationSource,
+                        WhoamiRateLimitFilter whoamiRateLimitFilter,
+                        LoginFailureAuthEntryPoint loginFailureAuthEntryPoint) {
                 this.corsConfigurationSource = corsConfigurationSource;
+                this.whoamiRateLimitFilter = whoamiRateLimitFilter;
+                this.loginFailureAuthEntryPoint = loginFailureAuthEntryPoint;
         }
 
         @Bean
@@ -44,8 +53,9 @@ public class SecurityConfig {
                                                 .requestMatchers("/audit/**").hasAnyRole("ADMIN", "SUPPORT")
                                                 .requestMatchers("/agents/**").hasRole("ADMIN")
                                                 .anyRequest().authenticated())
-                                .httpBasic(httpBasic -> {
-                                })
+                                .addFilterBefore(whoamiRateLimitFilter,
+                                                org.springframework.security.web.authentication.www.BasicAuthenticationFilter.class)
+                                .httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(loginFailureAuthEntryPoint))
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .headers(headers -> headers

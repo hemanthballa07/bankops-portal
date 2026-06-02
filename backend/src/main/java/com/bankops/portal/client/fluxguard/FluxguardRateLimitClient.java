@@ -15,6 +15,7 @@ import com.fluxguard.grpc.ratelimit.v1.CheckLimitResponse;
 import com.fluxguard.grpc.ratelimit.v1.Decision;
 import com.fluxguard.grpc.ratelimit.v1.Policy;
 import com.fluxguard.grpc.ratelimit.v1.RateLimitGrpc;
+import com.fluxguard.grpc.ratelimit.v1.ReportLoginFailureRequest;
 
 import io.grpc.StatusRuntimeException;
 
@@ -64,6 +65,55 @@ public class FluxguardRateLimitClient {
         } catch (StatusRuntimeException e) {
             logError(requestId, e, startNanos);
             return new FluxguardRateLimitOutcome.Unavailable();
+        }
+    }
+
+    public FluxguardRateLimitOutcome checkLogin(String requestId, String clientIp) {
+        if (!props.enabled()) {
+            return new FluxguardRateLimitOutcome.Disabled();
+        }
+
+        CheckLimitRequest req = CheckLimitRequest.newBuilder()
+                .setRequestId(requestId)
+                .setPolicy(Policy.POLICY_LOGIN)
+                .setClientIp(clientIp)
+                .build();
+
+        long startNanos = System.nanoTime();
+        try {
+            CheckLimitResponse resp = stub
+                    .withDeadlineAfter(props.deadline().toMillis(), MILLISECONDS)
+                    .checkLimit(req);
+            FluxguardRateLimitOutcome outcome = mapResponse(resp);
+            logOutcome(requestId, outcome, resp, startNanos);
+            return outcome;
+        } catch (StatusRuntimeException e) {
+            logError(requestId, e, startNanos);
+            return new FluxguardRateLimitOutcome.Unavailable();
+        }
+    }
+
+    public void reportLoginFailure(String requestId, String clientIp) {
+        if (!props.enabled()) {
+            return;
+        }
+
+        ReportLoginFailureRequest req = ReportLoginFailureRequest.newBuilder()
+                .setRequestId(requestId)
+                .setClientIp(clientIp)
+                .build();
+
+        try {
+            stub.withDeadlineAfter(props.deadline().toMillis(), MILLISECONDS)
+                    .reportLoginFailure(req);
+        } catch (StatusRuntimeException e) {
+            Map<String, Object> ctx = new HashMap<>();
+            ctx.put("grpc_code", e.getStatus().getCode().name());
+            if (e.getStatus().getDescription() != null) {
+                ctx.put("description", e.getStatus().getDescription());
+            }
+            loggingService.logEvent(requestId, LogEvent.LogLevel.WARN,
+                    "fluxguard.report_login_failure_error", ctx);
         }
     }
 

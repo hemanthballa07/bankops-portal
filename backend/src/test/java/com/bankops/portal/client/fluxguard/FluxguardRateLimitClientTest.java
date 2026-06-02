@@ -14,7 +14,10 @@ import com.bankops.portal.service.LoggingService;
 import com.fluxguard.grpc.ratelimit.v1.CheckLimitRequest;
 import com.fluxguard.grpc.ratelimit.v1.CheckLimitResponse;
 import com.fluxguard.grpc.ratelimit.v1.Decision;
+import com.fluxguard.grpc.ratelimit.v1.Policy;
 import com.fluxguard.grpc.ratelimit.v1.RateLimitGrpc;
+import com.fluxguard.grpc.ratelimit.v1.ReportLoginFailureRequest;
+import com.fluxguard.grpc.ratelimit.v1.ReportLoginFailureResponse;
 
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
@@ -97,6 +100,65 @@ class FluxguardRateLimitClientTest {
         assertThat(service.callCount()).isZero();
     }
 
+    @Test
+    void checkLogin_allowResponse_mapsToAllow() {
+        service.respondAllow();
+        FluxguardRateLimitOutcome outcome =
+                client(enabledProps).checkLogin("login-req-1", "203.0.113.7");
+        assertThat(outcome).isInstanceOf(FluxguardRateLimitOutcome.Allow.class);
+        assertThat(service.lastCheckRequest().getPolicy()).isEqualTo(Policy.POLICY_LOGIN);
+        assertThat(service.lastCheckRequest().getClientIp()).isEqualTo("203.0.113.7");
+        assertThat(service.lastCheckRequest().getSubject()).isEmpty();
+    }
+
+    @Test
+    void checkLogin_denyResponse_mapsToDeniedWithRetryAfter() {
+        service.respondDeny(2500L);
+        FluxguardRateLimitOutcome outcome =
+                client(enabledProps).checkLogin("login-req-2", "203.0.113.7");
+        assertThat(outcome).isInstanceOf(FluxguardRateLimitOutcome.Denied.class);
+        assertThat(((FluxguardRateLimitOutcome.Denied) outcome).retryAfterMs()).isEqualTo(2500L);
+    }
+
+    @Test
+    void checkLogin_serverError_mapsToUnavailable_failOpen() {
+        service.respondError(Status.UNAVAILABLE);
+        FluxguardRateLimitOutcome outcome =
+                client(enabledProps).checkLogin("login-req-3", "203.0.113.7");
+        assertThat(outcome).isInstanceOf(FluxguardRateLimitOutcome.Unavailable.class);
+    }
+
+    @Test
+    void checkLogin_disabledFlag_shortCircuitsToDisabled_withoutTouchingChannel() {
+        service.respondAllow();
+        FluxguardRateLimitOutcome outcome =
+                client(disabledProps).checkLogin("login-req-4", "203.0.113.7");
+        assertThat(outcome).isInstanceOf(FluxguardRateLimitOutcome.Disabled.class);
+        assertThat(service.callCount()).isZero();
+    }
+
+    @Test
+    void reportLoginFailure_callsStubWithClientIp() {
+        client(enabledProps).reportLoginFailure("login-req-5", "203.0.113.7");
+        assertThat(service.reportCallCount()).isEqualTo(1);
+        assertThat(service.lastReportRequest().getRequestId()).isEqualTo("login-req-5");
+        assertThat(service.lastReportRequest().getClientIp()).isEqualTo("203.0.113.7");
+    }
+
+    @Test
+    void reportLoginFailure_disabledFlag_makesNoRpc() {
+        client(disabledProps).reportLoginFailure("login-req-6", "203.0.113.7");
+        assertThat(service.reportCallCount()).isZero();
+    }
+
+    @Test
+    void reportLoginFailure_serverError_isSwallowed() {
+        service.respondReportError(Status.UNAVAILABLE);
+        // Best-effort: a transport error must not propagate to the caller.
+        client(enabledProps).reportLoginFailure("login-req-7", "203.0.113.7");
+        assertThat(service.reportCallCount()).isEqualTo(1);
+    }
+
     /**
      * In-process gRPC service whose response is settable per-test, counting calls so
      * the disabled-flag test can assert no RPC was made.
@@ -106,6 +168,10 @@ class FluxguardRateLimitClientTest {
         private CheckLimitResponse response;
         private Throwable error;
         private int callCount;
+        private CheckLimitRequest lastCheckRequest;
+        private Throwable reportError;
+        private int reportCallCount;
+        private ReportLoginFailureRequest lastReportRequest;
 
         void respondAllow() {
             this.error = null;
@@ -129,19 +195,49 @@ class FluxguardRateLimitClientTest {
             this.error = status.asRuntimeException();
         }
 
+        void respondReportError(Status status) {
+            this.reportError = status.asRuntimeException();
+        }
+
         int callCount() {
             return callCount;
+        }
+
+        int reportCallCount() {
+            return reportCallCount;
+        }
+
+        CheckLimitRequest lastCheckRequest() {
+            return lastCheckRequest;
+        }
+
+        ReportLoginFailureRequest lastReportRequest() {
+            return lastReportRequest;
         }
 
         @Override
         public void checkLimit(CheckLimitRequest request,
                 StreamObserver<CheckLimitResponse> responseObserver) {
             callCount++;
+            lastCheckRequest = request;
             if (error != null) {
                 responseObserver.onError(error);
                 return;
             }
             responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        }
+
+        @Override
+        public void reportLoginFailure(ReportLoginFailureRequest request,
+                StreamObserver<ReportLoginFailureResponse> responseObserver) {
+            reportCallCount++;
+            lastReportRequest = request;
+            if (reportError != null) {
+                responseObserver.onError(reportError);
+                return;
+            }
+            responseObserver.onNext(ReportLoginFailureResponse.newBuilder().build());
             responseObserver.onCompleted();
         }
     }
