@@ -11,7 +11,11 @@
       </div>
       <span class="spacer"></span>
       <div class="topbar-actions">
-        <button mat-icon-button class="topbar-btn" matTooltip="Notifications">
+        <button mat-icon-button class="topbar-btn" matTooltip="Notifications"
+                (click)="toggleRail()"
+                [matBadge]="(actionableCount$ | async)"
+                [matBadgeHidden]="!(actionableCount$ | async)"
+                matBadgeColor="warn" matBadgeSize="small">
           <mat-icon>notifications_none</mat-icon>
         </button>
         <button mat-icon-button class="topbar-btn" matTooltip="Help">
@@ -66,6 +70,13 @@
         <router-outlet></router-outlet>
       </mat-sidenav-content>
     </mat-sidenav-container>
+
+    <app-notifications-rail
+      [open]="railOpen"
+      [summary]="(summary$ | async)!"
+      (closeRail)="railOpen = false"
+      (refresh)="refreshNotifications()">
+    </app-notifications-rail>
   </div>
 </ng-container>
 
