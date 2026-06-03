@@ -11,7 +11,7 @@
     <mat-spinner diameter="28"></mat-spinner><span>Loading…</span>
   </div>
 
-  <div *ngIf="error" class="error-banner">{{ error }}</div>
+  <div *ngIf="error" class="error-banner" role="alert">{{ error }}</div>
 
   <div *ngIf="!loading" class="panel">
     <label class="field">

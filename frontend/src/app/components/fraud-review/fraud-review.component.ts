@@ -176,6 +176,15 @@ export class FraudReviewComponent implements OnInit {
     return `${Math.round(score * 100)}%`;
   }
 
+  bandLabel(score: number): string {
+    const band = this.mlBand(score);
+    return band === 'high' ? 'High' : band === 'med' ? 'Med' : 'Low';
+  }
+
+  get sortAria(): 'ascending' | 'descending' | 'none' {
+    return this.sortDir === 'desc' ? 'descending' : this.sortDir === 'asc' ? 'ascending' : 'none';
+  }
+
   sortByMlRisk(): void {
     this.sortDir = this.sortDir === null ? 'desc' : this.sortDir === 'desc' ? 'asc' : null;
     const dir = this.sortDir;

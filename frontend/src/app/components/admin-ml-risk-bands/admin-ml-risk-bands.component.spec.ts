@@ -62,4 +62,11 @@ describe('AdminMlRiskBandsComponent', () => {
     component.save();
     expect(component.error).toContain('Failed to save');
   });
+
+  it('marks the error banner as an alert region for screen readers', () => {
+    service.getBands.and.returnValue(throwError(() => new Error('x')));
+    fixture.detectChanges();
+    const banner: HTMLElement = fixture.nativeElement.querySelector('.error-banner');
+    expect(banner.getAttribute('role')).toBe('alert');
+  });
 });

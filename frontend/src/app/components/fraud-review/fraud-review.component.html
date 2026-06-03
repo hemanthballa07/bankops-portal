@@ -9,7 +9,7 @@
       <p class="subtitle">HELD transactions awaiting ops review · Release to complete, reject to void</p>
     </div>
     <div class="header-actions">
-      <button mat-icon-button (click)="load()" matTooltip="Refresh" [disabled]="loading">
+      <button mat-icon-button (click)="load()" matTooltip="Refresh" aria-label="Refresh fraud holds" [disabled]="loading">
         <mat-icon>refresh</mat-icon>
       </button>
     </div>
@@ -59,9 +59,11 @@
           <th>Transaction</th>
           <th>Account</th>
           <th class="col-right">Amount</th>
-          <th class="col-ml col-sortable" (click)="sortByMlRisk()" matTooltip="Sort by ML risk">
-            ML risk
-            <span class="sort-arrow" *ngIf="sortDir">{{ sortDir === 'desc' ? '▼' : '▲' }}</span>
+          <th class="col-ml" [attr.aria-sort]="sortAria">
+            <button type="button" class="col-sort-btn" (click)="sortByMlRisk()" matTooltip="Sort by ML risk">
+              ML risk
+              <span class="sort-arrow" *ngIf="sortDir" aria-hidden="true">{{ sortDir === 'desc' ? '▼' : '▲' }}</span>
+            </button>
           </th>
           <th>Description</th>
           <th>Correlation ID</th>
@@ -91,8 +93,9 @@
           <td class="col-ml">
             <span *ngIf="row.mlScore != null && row.mlScore > 0"
                   class="ml-chip" [ngClass]="mlBand(row.mlScore)"
+                  [attr.aria-label]="'ML risk ' + bandLabel(row.mlScore) + ', ' + mlPercent(row.mlScore)"
                   matTooltip="Advisory ML fraud probability — not used for the hold decision">
-              <span class="dot"></span>{{ mlPercent(row.mlScore) }}
+              <span class="dot" aria-hidden="true"></span>{{ mlPercent(row.mlScore) }} {{ bandLabel(row.mlScore) }}
             </span>
             <span *ngIf="row.mlScore == null || row.mlScore === 0" class="ml-na">—</span>
           </td>
@@ -112,10 +115,12 @@
               <mat-spinner diameter="18"></mat-spinner>
             </div>
             <div *ngIf="!row.actioning" class="row-actions">
-              <button mat-icon-button class="btn-release" (click)="release(row)" matTooltip="Release transaction">
+              <button mat-icon-button class="btn-release" (click)="release(row)" matTooltip="Release transaction"
+                      [attr.aria-label]="'Release transaction ' + row.id">
                 <mat-icon>check_circle_outline</mat-icon>
               </button>
-              <button mat-icon-button class="btn-reject" (click)="reject(row)" matTooltip="Reject transaction">
+              <button mat-icon-button class="btn-reject" (click)="reject(row)" matTooltip="Reject transaction"
+                      [attr.aria-label]="'Reject transaction ' + row.id">
                 <mat-icon>cancel</mat-icon>
               </button>
             </div>

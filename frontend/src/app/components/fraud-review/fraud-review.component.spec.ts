@@ -275,4 +275,51 @@ describe('FraudReviewComponent', () => {
       expect(component.mlBand(0.4)).toBe('low'); // below configured med 0.5
     });
   });
+
+  describe('accessibility', () => {
+    it('bandLabel maps the score to a textual tier (not color-only)', () => {
+      expect(component.bandLabel(0.2)).toBe('Low');
+      expect(component.bandLabel(0.5)).toBe('Med');
+      expect(component.bandLabel(0.85)).toBe('High');
+    });
+
+    it('sortAria reflects the sort direction for aria-sort', () => {
+      expect(component.sortAria).toBe('none');
+      component.sortByMlRisk();
+      expect(component.sortAria).toBe('descending');
+      component.sortByMlRisk();
+      expect(component.sortAria).toBe('ascending');
+    });
+
+    it('renders the band in the chip text and aria-label', () => {
+      txService.getHeldTransactions.and.returnValue(of([{ ...held(1), mlScore: 0.82 }]));
+      component.load();
+      fixture.detectChanges();
+      const chip: HTMLElement = fixture.nativeElement.querySelector('.ml-chip');
+      expect(chip.textContent).toContain('High');
+      expect(chip.getAttribute('aria-label')).toContain('High');
+      expect(chip.getAttribute('aria-label')).toContain('82%');
+    });
+
+    it('exposes the ML risk column as a keyboard-operable sort with aria-sort', () => {
+      component.load();
+      fixture.detectChanges();
+      const th: HTMLElement = fixture.nativeElement.querySelector('th.col-ml');
+      const btn = th.querySelector('button.col-sort-btn') as HTMLButtonElement | null;
+      expect(btn).not.toBeNull();
+      expect(th.getAttribute('aria-sort')).toBe('none');
+      btn!.click();
+      fixture.detectChanges();
+      expect(th.getAttribute('aria-sort')).toBe('descending');
+    });
+
+    it('labels the icon-only release/reject buttons', () => {
+      component.load();
+      fixture.detectChanges();
+      const release: HTMLElement = fixture.nativeElement.querySelector('.btn-release');
+      const reject: HTMLElement = fixture.nativeElement.querySelector('.btn-reject');
+      expect(release.getAttribute('aria-label')).toContain('Release');
+      expect(reject.getAttribute('aria-label')).toContain('Reject');
+    });
+  });
 });
