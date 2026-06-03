@@ -120,6 +120,10 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 5 (merchant field) + Step 6b 
   - **Test output de-noised:** dropped the leftover `-Djdk.instrument.traceUsage` Surefire flag (a JDK diagnostic that printed a stack trace on every Mockito agent attach — hundreds of noise lines per `mvn test`); kept `-XX:+EnableDynamicAgentLoading`. Trace-noise lines went from hundreds → **0**.
   - **218 backend + 217 frontend tests green**, `ng build` clean. Commits `797e16b` (NG operators) / `aa91c84` (budgets) / `e0d224c` (traceUsage). Internal-only → no bridge post. **Unpushed** — user pushes/merges.
 
+- **Accessibility pass — WCAG 2.2 AA on the ML-risk surfaces (2026-06-03)** — branch `feat/a11y-pass`
+  - Fixed two concrete WCAG defects in the just-shipped chip/sort + swept the Fraud Review + band-editor screens. **Color-only → perceivable:** the ML risk chip shows the band in text (`78% High`) + an `aria-label` ("ML risk High, 78%"), so the tier no longer depends on color alone (decorative dot is `aria-hidden`). **Mouse-only → keyboard-operable:** the sortable "ML risk" header is a real `<button>` inside the `<th>` with `[attr.aria-sort]` (none/ascending/descending) — keyboard-operable + sort state announced. **Icon-only buttons labeled:** Fraud Review refresh + per-row release/reject `mat-icon-button`s got `aria-label`s ("Release transaction {id}"). **Live region:** the band-editor error banner is `role="alert"`.
+  - **223 frontend specs** (6 new a11y assertions: bandLabel/sortAria, chip band+aria-label render, keyboard sort + aria-sort, icon-button labels, alert region) green; `ng build` clean. Backend untouched (218 green). Commit `9f210bb`. Internal-only → no bridge post. **Unpushed** — user pushes/merges.
+
 ## In progress
 - **Step 4 — all existing screens on the dark-chrome design system + the net-new screens** (Reports & Analytics, Admin·Agent-Management, Notifications rail, SLA-config admin all done). No remaining required Step-4 screens.
 
