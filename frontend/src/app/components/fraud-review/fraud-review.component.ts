@@ -10,6 +10,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
+import { forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+
 import { TransactionService } from '../../services/transaction.service';
 import { Transaction } from '../../models/transaction.model';
 import { MlRiskBandService } from '../../services/ml-risk-band.service';
@@ -133,24 +136,24 @@ export class FraudReviewComponent implements OnInit {
     const targets = [...this.selectedRows];
     if (!targets.length) return;
     this.batchActioning = true;
-    let done = 0;
-    targets.forEach(row => {
-      this.txService.releaseTransaction(row.accountId, row.id).subscribe({
-        next: () => {
-          this.rows = this.rows.filter(r => r.id !== row.id);
-          this.totalElements = Math.max(0, this.totalElements - 1);
-          if (++done === targets.length) {
-            this.batchActioning = false;
-            this.snack.open(`${done} transaction(s) released`, '', { duration: 3000 });
-          }
-        },
-        error: () => {
-          if (++done === targets.length) {
-            this.batchActioning = false;
-            this.snack.open('Some releases failed', 'Dismiss', { duration: 4000 });
-          }
-        }
-      });
+    forkJoin(
+      targets.map(row =>
+        this.txService.releaseTransaction(row.accountId, row.id).pipe(
+          map(() => ({ id: row.id, ok: true })),
+          catchError(() => of({ id: row.id, ok: false })),
+        ),
+      ),
+    ).subscribe(results => {
+      const ok = results.filter(r => r.ok);
+      const okIds = new Set(ok.map(r => r.id));
+      this.rows = this.rows.filter(r => !okIds.has(r.id));
+      this.totalElements = Math.max(0, this.totalElements - ok.length);
+      this.batchActioning = false;
+      if (ok.length === results.length) {
+        this.snack.open(`${ok.length} transaction(s) released`, '', { duration: 3000 });
+      } else {
+        this.snack.open(`${ok.length} of ${results.length} released, ${results.length - ok.length} failed`, 'Dismiss', { duration: 4000 });
+      }
     });
   }
 
@@ -158,24 +161,24 @@ export class FraudReviewComponent implements OnInit {
     const targets = [...this.selectedRows];
     if (!targets.length) return;
     this.batchActioning = true;
-    let done = 0;
-    targets.forEach(row => {
-      this.txService.rejectTransaction(row.accountId, row.id).subscribe({
-        next: () => {
-          this.rows = this.rows.filter(r => r.id !== row.id);
-          this.totalElements = Math.max(0, this.totalElements - 1);
-          if (++done === targets.length) {
-            this.batchActioning = false;
-            this.snack.open(`${done} transaction(s) rejected`, '', { duration: 3000 });
-          }
-        },
-        error: () => {
-          if (++done === targets.length) {
-            this.batchActioning = false;
-            this.snack.open('Some rejects failed', 'Dismiss', { duration: 4000 });
-          }
-        }
-      });
+    forkJoin(
+      targets.map(row =>
+        this.txService.rejectTransaction(row.accountId, row.id).pipe(
+          map(() => ({ id: row.id, ok: true })),
+          catchError(() => of({ id: row.id, ok: false })),
+        ),
+      ),
+    ).subscribe(results => {
+      const ok = results.filter(r => r.ok);
+      const okIds = new Set(ok.map(r => r.id));
+      this.rows = this.rows.filter(r => !okIds.has(r.id));
+      this.totalElements = Math.max(0, this.totalElements - ok.length);
+      this.batchActioning = false;
+      if (ok.length === results.length) {
+        this.snack.open(`${ok.length} transaction(s) rejected`, '', { duration: 3000 });
+      } else {
+        this.snack.open(`${ok.length} of ${results.length} rejected, ${results.length - ok.length} failed`, 'Dismiss', { duration: 4000 });
+      }
     });
   }
 

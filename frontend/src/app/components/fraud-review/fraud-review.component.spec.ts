@@ -211,12 +211,14 @@ describe('FraudReviewComponent', () => {
       expect(snack.open).toHaveBeenCalledWith('2 transaction(s) rejected', '', { duration: 3000 });
     });
 
-    it('batchRelease surfaces a failure message when a release errors', () => {
-      txService.releaseTransaction.and.returnValue(throwError(() => new Error('x')));
+    it('batchRelease reports an accurate partial-failure count and only removes the successes', () => {
+      txService.releaseTransaction.and.returnValues(of(held(1)), throwError(() => new Error('x')));
       component.toggleAll(true);
       component.batchRelease();
       expect(component.batchActioning).toBeFalse();
-      expect(snack.open).toHaveBeenCalledWith('Some releases failed', 'Dismiss', { duration: 4000 });
+      expect(component.rows.length).toBe(1);
+      expect(component.totalElements).toBe(1);
+      expect(snack.open).toHaveBeenCalledWith('1 of 2 released, 1 failed', 'Dismiss', { duration: 4000 });
     });
   });
 
