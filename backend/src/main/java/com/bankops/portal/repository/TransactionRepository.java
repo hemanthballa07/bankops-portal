@@ -84,4 +84,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
         org.springframework.data.domain.Page<Transaction> findByStatus(
                 Transaction.TransactionStatus status, org.springframework.data.domain.Pageable pageable);
+
+        @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+        @Query("select t from Transaction t where t.id = :id")
+        Optional<Transaction> findByIdForUpdate(@Param("id") Long id);
 }

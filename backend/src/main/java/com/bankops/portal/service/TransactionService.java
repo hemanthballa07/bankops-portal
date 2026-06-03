@@ -84,8 +84,9 @@ public class TransactionService {
             return withdrawWithOptimisticRetry(accountId, request, idempotencyKey);
         }
 
-        // Deposit path (existing logic)
-        return createDeposit(accountId, request);
+        // Deposit path (existing logic) — call via the self-proxy so createDeposit's
+        // @Transactional actually applies (self-invocation would bypass the proxy).
+        return proxy().createDeposit(accountId, request);
     }
 
     private TransactionDto withdrawWithOptimisticRetry(Long accountId, CreateTransactionRequest request,
@@ -286,7 +287,7 @@ public class TransactionService {
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    private TransactionDto createDeposit(Long accountId, CreateTransactionRequest request) {
+    protected TransactionDto createDeposit(Long accountId, CreateTransactionRequest request) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found with id: " + accountId));
 
@@ -535,6 +536,7 @@ public class TransactionService {
         return toDto(txn);
     }
 
+    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
     public TransactionDto releaseTransaction(Long accountId, Long transactionId, String actorId, String notes) {
         // Rate-limit gate (fluxguard, POLICY_OPS_RELEASE) BEFORE any DB work or mutation:
         // a rate-limited ops action fails fast with 429 and never changes state. Keyed by
@@ -545,7 +547,9 @@ public class TransactionService {
             throw new FluxguardRateLimitException(d.retryAfterMs());
         }
 
-        Transaction txn = transactionRepository.findById(transactionId)
+        // Lock the row so two concurrent ops-clicks serialize; the second sees RELEASED/REJECTED
+        // and is rejected by the status guard below (no duplicate balance mutation or audit event).
+        Transaction txn = transactionRepository.findByIdForUpdate(transactionId)
                 .orElseThrow(() -> new IllegalArgumentException("Transaction not found: " + transactionId));
 
         if (!txn.getAccount().getId().equals(accountId)) {
@@ -607,7 +611,9 @@ public class TransactionService {
             throw new FluxguardRateLimitException(d.retryAfterMs());
         }
 
-        Transaction txn = transactionRepository.findById(transactionId)
+        // Lock the row so two concurrent ops-clicks serialize; the second sees RELEASED/REJECTED
+        // and is rejected by the status guard below (no duplicate balance mutation or audit event).
+        Transaction txn = transactionRepository.findByIdForUpdate(transactionId)
                 .orElseThrow(() -> new IllegalArgumentException("Transaction not found: " + transactionId));
 
         if (!txn.getAccount().getId().equals(accountId)) {
