@@ -28,6 +28,10 @@ export const routes: Routes = [
     loadComponent: () => import('./components/admin-sla-config/admin-sla-config.component').then(m => m.AdminSlaConfigComponent),
   },
   {
+    path: 'admin/ml-risk-bands', canActivate: [authGuard],
+    loadComponent: () => import('./components/admin-ml-risk-bands/admin-ml-risk-bands.component').then(m => m.AdminMlRiskBandsComponent),
+  },
+  {
     path: 'customers', canActivate: [authGuard],
     loadComponent: () => import('./components/customers/customers.component').then(m => m.CustomersComponent),
   },

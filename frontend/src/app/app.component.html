@@ -68,6 +68,10 @@
              [matTooltip]="sidebarCollapsed ? 'SLA Settings' : ''" matTooltipPosition="right">
             <mat-icon>schedule</mat-icon><span *ngIf="!sidebarCollapsed">SLA Settings</span>
           </a>
+          <a mat-list-item routerLink="/admin/ml-risk-bands" routerLinkActive="active"
+             [matTooltip]="sidebarCollapsed ? 'ML Risk Bands' : ''" matTooltipPosition="right">
+            <mat-icon>tune</mat-icon><span *ngIf="!sidebarCollapsed">ML Risk Bands</span>
+          </a>
         </mat-nav-list>
       </mat-sidenav>
       <mat-sidenav-content class="main-content">
