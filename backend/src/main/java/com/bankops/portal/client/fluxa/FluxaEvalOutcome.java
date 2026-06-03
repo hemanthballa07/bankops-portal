@@ -23,7 +23,7 @@ public sealed interface FluxaEvalOutcome
      * {@code mlScore} is the advisory blended ML probability in [0,1] (0 when the
      * scorer did not contribute). Display-only — never used to gate the hold.
      */
-    record Flag(List<FraudFlagDto> flags, double mlScore) implements FluxaEvalOutcome {
+    record Flag(List<FraudFlagDto> flags, double mlScore, String evaluatedBy) implements FluxaEvalOutcome {
     }
 
     /** Fluxa returned Status.UNAVAILABLE or a non-deadline transport error. */

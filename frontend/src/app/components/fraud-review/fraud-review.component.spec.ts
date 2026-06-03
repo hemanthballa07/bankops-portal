@@ -321,5 +321,12 @@ describe('FraudReviewComponent', () => {
       expect(release.getAttribute('aria-label')).toContain('Release');
       expect(reject.getAttribute('aria-label')).toContain('Reject');
     });
+
+    it('chipTooltip includes the scoring model when present', () => {
+      const base = 'Advisory ML fraud probability — not used for the hold decision';
+      expect(component.chipTooltip({ ...held(1), mlScore: 0.8 } as any)).toBe(base);
+      expect(component.chipTooltip({ ...held(1), mlScore: 0.8, evaluatedBy: 'fluxa-rules+ml-v1' } as any))
+        .toContain('fluxa-rules+ml-v1');
+    });
   });
 });

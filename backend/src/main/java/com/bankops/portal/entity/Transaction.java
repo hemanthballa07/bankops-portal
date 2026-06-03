@@ -64,6 +64,10 @@ public class Transaction {
     @Column(name = "ml_score")
     private Double mlScore;
 
+    // The Fluxa eval version that scored this hold (e.g. "fluxa-rules+ml-v1"); null pre-feature.
+    @Column(name = "evaluated_by", length = 64)
+    private String evaluatedBy;
+
     @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<SupportCase> cases = new ArrayList<>();

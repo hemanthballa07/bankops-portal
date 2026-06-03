@@ -94,7 +94,7 @@
             <span *ngIf="row.mlScore != null && row.mlScore > 0"
                   class="ml-chip" [ngClass]="mlBand(row.mlScore)"
                   [attr.aria-label]="'ML risk ' + bandLabel(row.mlScore) + ', ' + mlPercent(row.mlScore)"
-                  matTooltip="Advisory ML fraud probability — not used for the hold decision">
+                  [matTooltip]="chipTooltip(row)">
               <span class="dot" aria-hidden="true"></span>{{ mlPercent(row.mlScore) }} {{ bandLabel(row.mlScore) }}
             </span>
             <span *ngIf="row.mlScore == null || row.mlScore === 0" class="ml-na">—</span>

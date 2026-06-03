@@ -81,7 +81,7 @@ public class FluxaFraudClient {
             List<FraudFlagDto> flags = resp.getFlagsList().stream()
                     .map(p -> new FraudFlagDto(p.getRuleName(), p.getRuleValue()))
                     .collect(Collectors.toList());
-            return new FluxaEvalOutcome.Flag(flags, resp.getMlScore());
+            return new FluxaEvalOutcome.Flag(flags, resp.getMlScore(), resp.getEvaluatedBy());
         }
         return new FluxaEvalOutcome.Allow();
     }

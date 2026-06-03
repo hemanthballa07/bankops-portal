@@ -204,7 +204,8 @@ public class FraudGateIntegrationTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.status").value("HELD"))
-                .andExpect(jsonPath("$.mlScore").value(closeTo(0.83, 1e-6)));
+                .andExpect(jsonPath("$.mlScore").value(closeTo(0.83, 1e-6)))
+                .andExpect(jsonPath("$.evaluatedBy").value("test-stub-flag"));
 
         // Persisted on the entity
         assertThat(transactionRepository.findAll()).hasSize(1);

@@ -76,6 +76,7 @@ class FluxaFraudClientTest {
                         .setRuleName("amount_threshold")
                         .setRuleValue("amount=15000 > 500"))
                 .setMlScore(0.78)
+                .setEvaluatedBy("fluxa-rules+ml-v1")
                 .build();
         when(stub.evaluateTransaction(any(EvaluateRequest.class))).thenReturn(resp);
         FluxaFraudClient client = new FluxaFraudClient(stub, enabledProps, loggingService);
@@ -87,6 +88,7 @@ class FluxaFraudClientTest {
         assertThat(flag.flags().get(0).ruleName()).isEqualTo("amount_threshold");
         assertThat(flag.flags().get(0).ruleValue()).isEqualTo("amount=15000 > 500");
         assertThat(flag.mlScore()).isEqualTo(0.78);
+        assertThat(flag.evaluatedBy()).isEqualTo("fluxa-rules+ml-v1");
     }
 
     @Test

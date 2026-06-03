@@ -9,6 +9,7 @@ export interface Transaction {
   category?: string;
   createdAt: string;
   mlScore?: number; // Advisory ML fraud probability [0,1]; present on HELD txns.
+  evaluatedBy?: string; // Fluxa eval version that scored a HELD txn (provenance).
 }
 
 export interface CreateTransactionRequest {

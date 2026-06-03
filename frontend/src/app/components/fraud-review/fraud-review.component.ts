@@ -181,6 +181,11 @@ export class FraudReviewComponent implements OnInit {
     return band === 'high' ? 'High' : band === 'med' ? 'Med' : 'Low';
   }
 
+  chipTooltip(row: HeldRow): string {
+    const base = 'Advisory ML fraud probability — not used for the hold decision';
+    return row.evaluatedBy ? `${base} (scored by ${row.evaluatedBy})` : base;
+  }
+
   get sortAria(): 'ascending' | 'descending' | 'none' {
     return this.sortDir === 'desc' ? 'descending' : this.sortDir === 'asc' ? 'ascending' : 'none';
   }
