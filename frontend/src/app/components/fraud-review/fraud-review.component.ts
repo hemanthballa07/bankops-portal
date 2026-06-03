@@ -158,6 +158,16 @@ export class FraudReviewComponent implements OnInit {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
   }
 
+  mlBand(score: number): 'low' | 'med' | 'high' {
+    if (score >= 0.7) return 'high';
+    if (score >= 0.4) return 'med';
+    return 'low';
+  }
+
+  mlPercent(score: number): string {
+    return `${Math.round(score * 100)}%`;
+  }
+
   timeAgo(dateStr: string): string {
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);

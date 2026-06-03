@@ -59,6 +59,7 @@
           <th>Transaction</th>
           <th>Account</th>
           <th class="col-right">Amount</th>
+          <th class="col-ml">ML risk</th>
           <th>Description</th>
           <th>Correlation ID</th>
           <th>Age</th>
@@ -83,6 +84,14 @@
           </td>
           <td class="col-right">
             <span class="amount">{{ formatAmount(row.amount) }}</span>
+          </td>
+          <td class="col-ml">
+            <span *ngIf="row.mlScore != null && row.mlScore > 0"
+                  class="ml-chip" [ngClass]="mlBand(row.mlScore)"
+                  matTooltip="Advisory ML fraud probability — not used for the hold decision">
+              <span class="dot"></span>{{ mlPercent(row.mlScore) }}
+            </span>
+            <span *ngIf="row.mlScore == null || row.mlScore === 0" class="ml-na">—</span>
           </td>
           <td class="col-desc">
             <span class="description" [matTooltip]="row.description || ''">

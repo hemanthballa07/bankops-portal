@@ -209,4 +209,35 @@ describe('FraudReviewComponent', () => {
       expect(component.timeAgo(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString())).toBe('2d ago');
     });
   });
+
+  describe('ML risk chip', () => {
+    it('mlBand classifies low/med/high at the thresholds', () => {
+      expect(component.mlBand(0.39)).toBe('low');
+      expect(component.mlBand(0.4)).toBe('med');
+      expect(component.mlBand(0.69)).toBe('med');
+      expect(component.mlBand(0.7)).toBe('high');
+      expect(component.mlBand(0.95)).toBe('high');
+    });
+
+    it('mlPercent renders a rounded percentage', () => {
+      expect(component.mlPercent(0.78)).toBe('78%');
+      expect(component.mlPercent(0.5)).toBe('50%');
+    });
+
+    it('renders a chip only for rows with mlScore > 0', () => {
+      txService.getHeldTransactions.and.returnValue(
+        of([
+          { ...held(1), mlScore: 0.82 },
+          { ...held(2), mlScore: 0 },
+          { ...held(3), mlScore: undefined },
+        ]),
+      );
+      component.load();
+      fixture.detectChanges();
+      const chips = fixture.nativeElement.querySelectorAll('.ml-chip');
+      expect(chips.length).toBe(1);
+      expect(chips[0].textContent).toContain('82%');
+      expect(chips[0].classList).toContain('high');
+    });
+  });
 });

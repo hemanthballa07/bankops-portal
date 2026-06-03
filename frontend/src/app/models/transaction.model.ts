@@ -8,6 +8,7 @@ export interface Transaction {
   description?: string;
   category?: string;
   createdAt: string;
+  mlScore?: number; // Advisory ML fraud probability [0,1]; present on HELD txns.
 }
 
 export interface CreateTransactionRequest {

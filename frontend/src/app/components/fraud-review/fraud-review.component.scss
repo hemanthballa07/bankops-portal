@@ -292,3 +292,44 @@
     justify-content: flex-end;
     padding-right: $spacing-sm;
 }
+
+// ============================================
+// ML RISK CHIP (advisory — display only)
+// ============================================
+.ml-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px;
+    border-radius: $border-radius-full;
+    font-size: $font-size-sm;
+    font-weight: 600;
+
+    .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+
+    // Tailwind-style -800 text shades paired with the design-system -bg tokens
+    // for legible contrast (no Sass darken() to avoid deprecation warnings).
+    &.low {
+        background: $color-success-bg;
+        color: #065F46;
+        .dot { background: $color-success; }
+    }
+    &.med {
+        background: $color-warning-bg;
+        color: #92400E;
+        .dot { background: $color-warning; }
+    }
+    &.high {
+        background: $color-error-bg;
+        color: #991B1B;
+        .dot { background: $color-error; }
+    }
+}
+
+.ml-na {
+    color: $color-text-tertiary;
+}
