@@ -94,13 +94,13 @@
             <div class="feed-body">
               <div class="feed-title">
                 {{ tx.description || tx.type }}
-                <span class="amount-tag">{{ formatAmount(tx.amount) }}</span>
+                <span class="amount-tag">{{ tx.amount | amount }}</span>
               </div>
               <div class="feed-meta">
                 Account #{{ tx.accountId }} &middot; corr {{ tx.correlationId.slice(0, 8) }}…
               </div>
             </div>
-            <div class="feed-time">{{ timeAgo(tx.createdAt) }}</div>
+            <div class="feed-time">{{ tx.createdAt | timeAgo }}</div>
           </div>
         </div>
       </div>
@@ -133,7 +133,7 @@
                 <span *ngIf="!c.assignedTo" class="unassigned-badge">Unassigned</span>
               </div>
             </div>
-            <div class="feed-time">{{ timeAgo(c.createdAt) }}</div>
+            <div class="feed-time">{{ c.createdAt | timeAgo }}</div>
           </div>
         </div>
       </div>

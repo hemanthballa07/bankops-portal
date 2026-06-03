@@ -16,6 +16,8 @@ import { catchError, map } from 'rxjs/operators';
 import { TransactionService } from '../../services/transaction.service';
 import { Transaction } from '../../models/transaction.model';
 import { MlRiskBandService } from '../../services/ml-risk-band.service';
+import { TimeAgoPipe } from '../../shared/pipes/time-ago.pipe';
+import { AmountPipe } from '../../shared/pipes/amount.pipe';
 
 interface HeldRow extends Transaction {
   selected: boolean;
@@ -36,6 +38,8 @@ interface HeldRow extends Transaction {
     MatProgressSpinnerModule,
     MatPaginatorModule,
     MatSnackBarModule,
+    TimeAgoPipe,
+    AmountPipe,
   ],
   templateUrl: './fraud-review.component.html',
   styleUrls: ['./fraud-review.component.scss']
@@ -182,10 +186,6 @@ export class FraudReviewComponent implements OnInit {
     });
   }
 
-  formatAmount(amount: number): string {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-  }
-
   mlBand(score: number): 'low' | 'med' | 'high' {
     if (score >= this.bands.highThreshold) return 'high';
     if (score >= this.bands.medThreshold) return 'med';
@@ -216,12 +216,4 @@ export class FraudReviewComponent implements OnInit {
     this.load();
   }
 
-  timeAgo(dateStr: string): string {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    return `${Math.floor(hrs / 24)}d ago`;
-  }
 }

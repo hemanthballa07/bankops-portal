@@ -12,6 +12,8 @@ import { CaseService } from '../../services/case.service';
 import { TransactionService } from '../../services/transaction.service';
 import { CaseKpi, SupportCase } from '../../models/case.model';
 import { Transaction } from '../../models/transaction.model';
+import { TimeAgoPipe } from '../../shared/pipes/time-ago.pipe';
+import { AmountPipe } from '../../shared/pipes/amount.pipe';
 
 @Component({
   selector: 'app-dashboard',
@@ -23,6 +25,8 @@ import { Transaction } from '../../models/transaction.model';
     MatButtonModule,
     MatTooltipModule,
     MatProgressSpinnerModule,
+    TimeAgoPipe,
+    AmountPipe,
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
@@ -53,18 +57,5 @@ export class DashboardComponent implements OnInit {
 
   get heldCount(): number {
     return this.heldTransactions.length;
-  }
-
-  formatAmount(amount: number): string {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-  }
-
-  timeAgo(dateStr: string): string {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    return `${Math.floor(hrs / 24)}d ago`;
   }
 }

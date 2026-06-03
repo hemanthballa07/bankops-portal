@@ -222,17 +222,6 @@ describe('FraudReviewComponent', () => {
     });
   });
 
-  describe('formatting helpers', () => {
-    it('formatAmount renders USD currency', () => {
-      expect(component.formatAmount(1234.5)).toBe('$1,234.50');
-    });
-
-    it('timeAgo renders minutes, hours, and days', () => {
-      expect(component.timeAgo(new Date(Date.now() - 5 * 60 * 1000).toISOString())).toBe('5m ago');
-      expect(component.timeAgo(new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString())).toBe('3h ago');
-      expect(component.timeAgo(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString())).toBe('2d ago');
-    });
-  });
 
   describe('ML risk chip', () => {
     it('mlBand classifies low/med/high at the thresholds', () => {

@@ -114,14 +114,4 @@ describe('DashboardComponent', () => {
     component.ngOnInit();
     expect(component.heldCount).toBe(2);
   });
-
-  it('formatAmount renders USD currency', () => {
-    expect(component.formatAmount(2500)).toBe('$2,500.00');
-  });
-
-  it('timeAgo renders minutes, hours, and days', () => {
-    expect(component.timeAgo(new Date(Date.now() - 5 * 60 * 1000).toISOString())).toBe('5m ago');
-    expect(component.timeAgo(new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString())).toBe('3h ago');
-    expect(component.timeAgo(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString())).toBe('2d ago');
-  });
 });
