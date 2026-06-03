@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class AuditEventService {
 
     private final AuditEventRepository auditEventRepository;
@@ -42,8 +43,7 @@ public class AuditEventService {
             Object newValue,
             String performedBy) {
         try {
-            System.out.println("=== AUDIT EVENT RECORDING START ===");
-            System.out.println("Entity Type: " + entityType + ", Entity ID: " + entityId + ", Action: " + action);
+            log.debug("Recording audit event: entityType={} entityId={} action={}", entityType, entityId, action);
 
             String oldValueJson = oldValue != null ? objectMapper.writeValueAsString(oldValue) : null;
             String newValueJson = newValue != null ? objectMapper.writeValueAsString(newValue) : null;
@@ -58,16 +58,13 @@ public class AuditEventService {
                     .timestamp(LocalDateTime.now())
                     .build();
 
-            System.out.println("Saving audit event...");
             auditEventRepository.save(event);
-            System.out.println("=== AUDIT EVENT SAVED SUCCESSFULLY ===");
+            log.debug("Audit event saved: entityType={} entityId={}", entityType, entityId);
         } catch (JsonProcessingException e) {
-            System.err.println("=== AUDIT EVENT FAILED: JSON Error ===");
-            e.printStackTrace();
+            log.error("Audit event failed to serialize values for entityType={} entityId={}", entityType, entityId, e);
             throw new IllegalStateException("Failed to serialize audit event values", e);
         } catch (Exception e) {
-            System.err.println("=== AUDIT EVENT FAILED: " + e.getMessage() + " ===");
-            e.printStackTrace();
+            log.error("Audit event failed for entityType={} entityId={}: {}", entityType, entityId, e.getMessage(), e);
             throw e;
         }
     }
