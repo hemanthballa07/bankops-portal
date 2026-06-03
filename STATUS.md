@@ -106,18 +106,22 @@ Trifecta Steps 1–3 + Step A (e2e) complete. Step 5 (merchant field) + Step 6b 
   - Frontend: `SlaConfigAdminService` + `AdminSlaConfigComponent` (`/admin/sla-config`, per-priority hours editor, load/save/validation) + "SLA Settings" sidebar nav entry.
   - Built via the full loop: brainstorm → spec → `writing-plans` → `critique-plan`×2 ⇄ `patch-plan` (converged READY: critique caught a **false Flyway/migration premise** — repo has no Flyway, so the planned V7 migration was dead code → removed; table is created by `ddl-auto` like `FeatureFlag`). **206 backend tests** (new `SlaConfigServiceTest` 6 + `SlaConfigIntegrationTest` 5 + `SlaServiceTest` 2 new) + **205 frontend specs** (new service 2 + component 5) green; `ng build` clean (only pre-existing budget/strictness warnings). **Unpushed** — user pushes/merges (`git push` denied to Claude).
 
+- **Advisory ML risk chip — Step 5a follow-up (2026-06-03)** — branch `feat/ml-score-chip`
+  - Surfaces Fluxa's advisory `EvaluateResponse.ml_score` (blended ML fraud probability `[0,1]`) as a **display-only** banded "ML risk" chip on HELD transactions in the Fraud Review Center. **Never gates the hold** — the decision stays keyed on `decision`/`flags`. Re-vendored `fraud_eval.proto` to add `double ml_score = 5;` (additive/backward-compat; `sync-proto.sh` now passes), mapped it onto `FluxaEvalOutcome.Flag(flags, mlScore)`, persisted a nullable `Double mlScore` on `Transaction` at FLAG/HELD time (`ddl-auto` column; null = pre-feature/never-evaluated), exposed it via `TransactionDto`/`toDto` (already on `GET /transactions?status=HELD`), and rendered a `Low/Med/High` chip gated on `mlScore > 0` (provisional bands `<0.40`/`0.40–0.70`/`≥0.70`, percent display).
+  - Built via the full loop: brainstorm → spec → `writing-plans` → `critique-plan`×2 ⇄ `patch-plan` (converged READY; caught a jsonPath numeric-matcher robustness gap → `closeTo`, a spec/plan DoD coverage gap → gated optional live-smoke step, + a test-count slip). **208 backend tests** (new `FluxaFraudClientTest` ml_score map + zero-default; new `FraudGateIntegrationTest` persist+DTO+HELD-list) + **208 frontend specs** (new `mlBand`/`mlPercent`/chip-gating) green; `ng build` clean (only pre-existing budget/strictness warnings). Commits `d94dafb` (proto), `abae044` (Flag map), `7725f83` (persist+DTO), `042d5ba` (chip). **Bridge:** claimed via msg 48 (asked fluxa whether `ml_score` is non-zero for our feature-poor requests + whether `evaluated_by` carries the `+ml` suffix); **fluxa reply still pending** → bands stay provisional, but the `mlScore > 0` gate makes the chip robust either way (a ~0 score simply renders no chip). **Unpushed** — user pushes/merges (`git push` denied to Claude).
+
 ## In progress
 - **Step 4 — all existing screens on the dark-chrome design system + the net-new screens** (Reports & Analytics, Admin·Agent-Management, Notifications rail, SLA-config admin all done). No remaining required Step-4 screens.
 
 ## Next
 - Step-4 net-new screens (Reports, Admin·Agents, Notifications rail, SLA-config admin) are all DONE. No open required work — remaining items are optional/cosmetic.
-- Optional (Fluxa Step 5a, trifecta msg 29): surface the advisory `ml_score` as an "ML risk" chip on HELD txns/cases — needs re-vendoring the proto + regenerating stubs first. See Open decisions.
+- ~~Optional (Fluxa Step 5a, trifecta msg 29): surface the advisory `ml_score` as an "ML risk" chip~~ — **DONE 2026-06-03** (branch `feat/ml-score-chip`; see Done). Fraud Review Center HELD table only; the cases/account-detail surfaces were intentionally deferred (reuse the persisted `mlScore` if triage finds the chip useful).
 - Notifications rail v2 (deferred): system-incident (ERROR-log) alert category — distinct system-health axis from the work-queue; data not cleanly queryable yet.
 
 ## Open decisions
 - Should shadow-mode swallow `InvalidArgument` (current) or surface 400 in observer mode?
 - Final typography + density decisions for redesigned screens.
-- Surface Fluxa's advisory `ml_score` (Step 5a, trifecta msg 29) as a UI chip? Low-signal for our feature-poor `EvaluateRequest`; Fluxa says advisory-only, don't gate on it. Cosmetic, deferred.
+- ~~Surface Fluxa's advisory `ml_score` (Step 5a, trifecta msg 29) as a UI chip?~~ **RESOLVED — implemented 2026-06-03** as a display-only, non-gating chip on the Fraud Review HELD table (gated on `mlScore > 0`). Final band thresholds pending fluxa's msg-48 reply on the realistic `ml_score` range for our requests.
 
 ## Reference
 - **Restart sequence** — H2 wipes on restart, but `LocalDataSeeder` (`@Profile("local")`) now auto-seeds Customer id=1 + Account id=1 (CHEQUING, balance 250000) on an empty DB, so manual customer/account re-seed is **no longer needed**:
