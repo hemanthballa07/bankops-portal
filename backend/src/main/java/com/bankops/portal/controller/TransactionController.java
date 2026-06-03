@@ -71,6 +71,9 @@ public class TransactionController {
         return ResponseEntity.ok(transactionService.getTransaction(accountId, transactionId));
     }
 
+    // SUPPORT/ADMIN only. `isAnonymous()` keeps the local-profile trifecta-console bypass
+    // working (it reaches here unauthenticated); in test/prod a USER is authenticated and denied.
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('SUPPORT','ADMIN') or isAnonymous()")
     @PostMapping("/{transactionId}/release")
     public ResponseEntity<TransactionDto> releaseTransaction(
             @PathVariable Long accountId,
@@ -81,6 +84,7 @@ public class TransactionController {
         return ResponseEntity.ok(transactionService.releaseTransaction(accountId, transactionId, actorId, notes));
     }
 
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('SUPPORT','ADMIN') or isAnonymous()")
     @PostMapping("/{transactionId}/reject")
     public ResponseEntity<TransactionDto> rejectTransaction(
             @PathVariable Long accountId,

@@ -26,13 +26,16 @@ public class SecurityConfig {
         private final CorsConfigurationSource corsConfigurationSource;
         private final WhoamiRateLimitFilter whoamiRateLimitFilter;
         private final LoginFailureAuthEntryPoint loginFailureAuthEntryPoint;
+        private final org.springframework.core.env.Environment environment;
 
         public SecurityConfig(CorsConfigurationSource corsConfigurationSource,
                         WhoamiRateLimitFilter whoamiRateLimitFilter,
-                        LoginFailureAuthEntryPoint loginFailureAuthEntryPoint) {
+                        LoginFailureAuthEntryPoint loginFailureAuthEntryPoint,
+                        org.springframework.core.env.Environment environment) {
                 this.corsConfigurationSource = corsConfigurationSource;
                 this.whoamiRateLimitFilter = whoamiRateLimitFilter;
                 this.loginFailureAuthEntryPoint = loginFailureAuthEntryPoint;
+                this.environment = environment;
         }
 
         @Bean
@@ -43,8 +46,12 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/health").permitAll()
                                                 .requestMatchers("/whoami").permitAll() // Controller handles 401 logic
-                                                .requestMatchers("/actuator/**").permitAll()
+                                                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                                                 .requestMatchers("/h2-console/**").permitAll()
+                                                // release/reject are authorized at the method level (@PreAuthorize on
+                                                // TransactionController) so the deep path is enforced reliably under the
+                                                // /api context-path and the local-console bypass is preserved via isAnonymous().
+                                                .requestMatchers("/log-events/**").hasAnyRole("ADMIN", "SUPPORT")
                                                 .requestMatchers("/customers/**").hasAnyRole("USER", "SUPPORT")
                                                 .requestMatchers("/accounts/**").hasAnyRole("USER", "SUPPORT")
                                                 .requestMatchers("/cases/**").hasAnyRole("USER", "SUPPORT")
@@ -70,6 +77,17 @@ public class SecurityConfig {
 
         @Bean
         public UserDetailsService userDetailsService() {
+                // Refuse to start with default credentials under the prod profile.
+                boolean prod = java.util.Arrays.asList(environment.getActiveProfiles()).contains("prod");
+                if (prod) {
+                        for (String var : new String[] {"APP_USER_PASSWORD", "APP_SUPPORT_PASSWORD", "APP_ADMIN_PASSWORD"}) {
+                                if (System.getenv(var) == null || System.getenv(var).isBlank()) {
+                                        throw new IllegalStateException(
+                                                        "Refusing to start with the default '" + var + "' under the prod profile");
+                                }
+                        }
+                }
+
                 // In production, these should come from environment variables or database
                 String userUsername = System.getenv().getOrDefault("APP_USER_USERNAME", "user");
                 String userPassword = System.getenv().getOrDefault("APP_USER_PASSWORD", "password");
