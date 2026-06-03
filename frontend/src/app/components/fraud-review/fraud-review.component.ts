@@ -11,6 +11,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { TransactionService } from '../../services/transaction.service';
 import { Transaction } from '../../models/transaction.model';
+import { MlRiskBandService } from '../../services/ml-risk-band.service';
 
 interface HeldRow extends Transaction {
   selected: boolean;
@@ -39,14 +40,20 @@ export class FraudReviewComponent implements OnInit {
   loading = true;
   batchActioning = false;
   sortDir: 'desc' | 'asc' | null = null;
+  bands = { medThreshold: 0.4, highThreshold: 0.7 };
 
   constructor(
     private txService: TransactionService,
     private snack: MatSnackBar,
+    private bandService: MlRiskBandService,
   ) {}
 
   ngOnInit(): void {
     this.load();
+    this.bandService.getBands().subscribe({
+      next: (b) => (this.bands = b),
+      error: () => {/* keep defaults */},
+    });
   }
 
   load(): void {
@@ -160,8 +167,8 @@ export class FraudReviewComponent implements OnInit {
   }
 
   mlBand(score: number): 'low' | 'med' | 'high' {
-    if (score >= 0.7) return 'high';
-    if (score >= 0.4) return 'med';
+    if (score >= this.bands.highThreshold) return 'high';
+    if (score >= this.bands.medThreshold) return 'med';
     return 'low';
   }
 

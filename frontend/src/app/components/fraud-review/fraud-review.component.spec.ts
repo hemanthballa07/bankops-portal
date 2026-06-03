@@ -7,12 +7,15 @@ import { of, throwError } from 'rxjs';
 import { FraudReviewComponent } from './fraud-review.component';
 import { TransactionService } from '../../services/transaction.service';
 import { Transaction } from '../../models/transaction.model';
+import { MlRiskBandService } from '../../services/ml-risk-band.service';
+import { MlRiskBandConfig } from '../../models/ml-risk-band.model';
 
 describe('FraudReviewComponent', () => {
   let component: FraudReviewComponent;
   let fixture: ComponentFixture<FraudReviewComponent>;
   let txService: jasmine.SpyObj<TransactionService>;
   let snack: jasmine.SpyObj<MatSnackBar>;
+  let bandService: jasmine.SpyObj<MlRiskBandService>;
 
   const held = (id: number, accountId = 1): Transaction => ({
     id,
@@ -35,12 +38,16 @@ describe('FraudReviewComponent', () => {
     txService.releaseTransaction.and.returnValue(of(held(1)));
     txService.rejectTransaction.and.returnValue(of(held(1)));
 
+    bandService = jasmine.createSpyObj('MlRiskBandService', ['getBands', 'update']);
+    bandService.getBands.and.returnValue(of({ medThreshold: 0.4, highThreshold: 0.7 } as MlRiskBandConfig));
+
     await TestBed.configureTestingModule({
       imports: [FraudReviewComponent],
       providers: [
         provideNoopAnimations(),
         provideRouter([]),
         { provide: TransactionService, useValue: txService },
+        { provide: MlRiskBandService, useValue: bandService },
       ],
     }).compileComponents();
 
@@ -258,6 +265,14 @@ describe('FraudReviewComponent', () => {
       component.sortByMlRisk(); // off
       expect(component.sortDir).toBeNull();
       expect(component.rows.length).toBe(3);
+    });
+
+    it('mlBand uses the configured thresholds once bands load', () => {
+      bandService.getBands.and.returnValue(of({ medThreshold: 0.5, highThreshold: 0.9 } as MlRiskBandConfig));
+      fixture.detectChanges(); // ngOnInit fetches bands
+      expect(component.mlBand(0.6)).toBe('med'); // 0.6 >= 0.5 (med) but < 0.9 (high)
+      expect(component.mlBand(0.95)).toBe('high');
+      expect(component.mlBand(0.4)).toBe('low'); // below configured med 0.5
     });
   });
 });
