@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { TransactionService } from '../../services/transaction.service';
@@ -30,6 +31,7 @@ interface HeldRow extends Transaction {
     MatCheckboxModule,
     MatTooltipModule,
     MatProgressSpinnerModule,
+    MatPaginatorModule,
     MatSnackBarModule,
   ],
   templateUrl: './fraud-review.component.html',
@@ -40,6 +42,9 @@ export class FraudReviewComponent implements OnInit {
   loading = true;
   batchActioning = false;
   sortDir: 'desc' | 'asc' | null = null;
+  pageIndex = 0;
+  pageSize = 20;
+  totalElements = 0;
   bands = { medThreshold: 0.4, highThreshold: 0.7 };
 
   constructor(
@@ -58,9 +63,11 @@ export class FraudReviewComponent implements OnInit {
 
   load(): void {
     this.loading = true;
-    this.txService.getHeldTransactions().subscribe({
-      next: (txs) => {
-        this.rows = txs.map(tx => ({ ...tx, selected: false, actioning: false }));
+    const sort = this.sortDir === 'desc' ? 'mlScore,desc' : this.sortDir === 'asc' ? 'mlScore,asc' : undefined;
+    this.txService.getHeldTransactionsPaged(this.pageIndex, this.pageSize, sort).subscribe({
+      next: (resp) => {
+        this.rows = resp.content.map(tx => ({ ...tx, selected: false, actioning: false }));
+        this.totalElements = resp.totalElements;
         this.loading = false;
       },
       error: () => {
@@ -68,6 +75,12 @@ export class FraudReviewComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  onPageChange(e: { pageIndex: number; pageSize: number }): void {
+    this.pageIndex = e.pageIndex;
+    this.pageSize = e.pageSize;
+    this.load();
   }
 
   get selectedRows(): HeldRow[] {
@@ -91,6 +104,7 @@ export class FraudReviewComponent implements OnInit {
     this.txService.releaseTransaction(row.accountId, row.id).subscribe({
       next: () => {
         this.rows = this.rows.filter(r => r.id !== row.id);
+        this.totalElements = Math.max(0, this.totalElements - 1);
         this.snack.open(`Transaction #${row.id} released`, '', { duration: 3000 });
       },
       error: () => {
@@ -105,6 +119,7 @@ export class FraudReviewComponent implements OnInit {
     this.txService.rejectTransaction(row.accountId, row.id).subscribe({
       next: () => {
         this.rows = this.rows.filter(r => r.id !== row.id);
+        this.totalElements = Math.max(0, this.totalElements - 1);
         this.snack.open(`Transaction #${row.id} rejected`, '', { duration: 3000 });
       },
       error: () => {
@@ -123,6 +138,7 @@ export class FraudReviewComponent implements OnInit {
       this.txService.releaseTransaction(row.accountId, row.id).subscribe({
         next: () => {
           this.rows = this.rows.filter(r => r.id !== row.id);
+          this.totalElements = Math.max(0, this.totalElements - 1);
           if (++done === targets.length) {
             this.batchActioning = false;
             this.snack.open(`${done} transaction(s) released`, '', { duration: 3000 });
@@ -147,6 +163,7 @@ export class FraudReviewComponent implements OnInit {
       this.txService.rejectTransaction(row.accountId, row.id).subscribe({
         next: () => {
           this.rows = this.rows.filter(r => r.id !== row.id);
+          this.totalElements = Math.max(0, this.totalElements - 1);
           if (++done === targets.length) {
             this.batchActioning = false;
             this.snack.open(`${done} transaction(s) rejected`, '', { duration: 3000 });
@@ -192,18 +209,8 @@ export class FraudReviewComponent implements OnInit {
 
   sortByMlRisk(): void {
     this.sortDir = this.sortDir === null ? 'desc' : this.sortDir === 'desc' ? 'asc' : null;
-    const dir = this.sortDir;
-    const byNewest = (a: HeldRow, b: HeldRow) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    const scored = (r: HeldRow) => r.mlScore != null && r.mlScore > 0;
-    this.rows = [...this.rows].sort((a, b) => {
-      if (dir === null) return byNewest(a, b);
-      const as = scored(a), bs = scored(b);
-      if (!as && !bs) return byNewest(a, b);
-      if (!as) return 1;
-      if (!bs) return -1;
-      return dir === 'desc' ? b.mlScore! - a.mlScore! : a.mlScore! - b.mlScore!;
-    });
+    this.pageIndex = 0;
+    this.load();
   }
 
   timeAgo(dateStr: string): string {

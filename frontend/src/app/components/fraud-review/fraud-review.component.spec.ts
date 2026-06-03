@@ -30,11 +30,13 @@ describe('FraudReviewComponent', () => {
 
   beforeEach(async () => {
     txService = jasmine.createSpyObj('TransactionService', [
-      'getHeldTransactions',
+      'getHeldTransactionsPaged',
       'releaseTransaction',
       'rejectTransaction',
     ]);
-    txService.getHeldTransactions.and.returnValue(of([held(1), held(2)]));
+    txService.getHeldTransactionsPaged.and.returnValue(
+      of({ content: [held(1), held(2)], page: 0, size: 20, totalElements: 2, totalPages: 1 }),
+    );
     txService.releaseTransaction.and.returnValue(of(held(1)));
     txService.rejectTransaction.and.returnValue(of(held(1)));
 
@@ -65,14 +67,15 @@ describe('FraudReviewComponent', () => {
   describe('load', () => {
     it('maps held transactions to selectable rows and clears loading', () => {
       component.load();
-      expect(txService.getHeldTransactions).toHaveBeenCalled();
+      expect(txService.getHeldTransactionsPaged).toHaveBeenCalled();
       expect(component.rows.length).toBe(2);
+      expect(component.totalElements).toBe(2);
       expect(component.rows.every((r) => r.selected === false && r.actioning === false)).toBeTrue();
       expect(component.loading).toBeFalse();
     });
 
     it('shows a snackbar and clears loading when the load fails', () => {
-      txService.getHeldTransactions.and.returnValue(throwError(() => new Error('boom')));
+      txService.getHeldTransactionsPaged.and.returnValue(throwError(() => new Error('boom')));
       component.load();
       expect(snack.open).toHaveBeenCalledWith('Failed to load fraud holds', 'Dismiss', { duration: 4000 });
       expect(component.loading).toBeFalse();
@@ -81,8 +84,19 @@ describe('FraudReviewComponent', () => {
 
     it('runs on init', () => {
       fixture.detectChanges(); // triggers ngOnInit
-      expect(txService.getHeldTransactions).toHaveBeenCalled();
+      expect(txService.getHeldTransactionsPaged).toHaveBeenCalled();
       expect(component.rows.length).toBe(2);
+    });
+  });
+
+  describe('pagination', () => {
+    beforeEach(() => component.load());
+
+    it('onPageChange updates page index/size and re-fetches', () => {
+      component.onPageChange({ pageIndex: 2, pageSize: 50 } as any);
+      expect(component.pageIndex).toBe(2);
+      expect(component.pageSize).toBe(50);
+      expect(txService.getHeldTransactionsPaged).toHaveBeenCalledWith(2, 50, undefined);
     });
   });
 
@@ -129,6 +143,7 @@ describe('FraudReviewComponent', () => {
       component.release(row);
       expect(txService.releaseTransaction).toHaveBeenCalledWith(row.accountId, row.id);
       expect(component.rows.find((r) => r.id === row.id)).toBeUndefined();
+      expect(component.totalElements).toBe(1);
       expect(snack.open).toHaveBeenCalledWith('Transaction #1 released', '', { duration: 3000 });
     });
 
@@ -232,12 +247,15 @@ describe('FraudReviewComponent', () => {
     });
 
     it('renders a chip only for rows with mlScore > 0', () => {
-      txService.getHeldTransactions.and.returnValue(
-        of([
-          { ...held(1), mlScore: 0.82 },
-          { ...held(2), mlScore: 0 },
-          { ...held(3), mlScore: undefined },
-        ]),
+      txService.getHeldTransactionsPaged.and.returnValue(
+        of({
+          content: [
+            { ...held(1), mlScore: 0.82 },
+            { ...held(2), mlScore: 0 },
+            { ...held(3), mlScore: undefined },
+          ],
+          page: 0, size: 20, totalElements: 3, totalPages: 1,
+        }),
       );
       component.load();
       fixture.detectChanges();
@@ -247,24 +265,17 @@ describe('FraudReviewComponent', () => {
       expect(chips[0].classList).toContain('high');
     });
 
-    it('sortByMlRisk cycles desc → asc → off and ranks scored rows, unscored last', () => {
-      component.rows = [
-        { ...held(1), mlScore: 0.2, selected: false, actioning: false },
-        { ...held(2), mlScore: 0.8, selected: false, actioning: false },
-        { ...held(3), mlScore: undefined, selected: false, actioning: false },
-      ] as any;
-
-      component.sortByMlRisk(); // desc
+    it('sortByMlRisk cycles desc → asc → off and re-fetches page 0 with the server sort', () => {
+      component.sortByMlRisk();
       expect(component.sortDir).toBe('desc');
-      expect(component.rows.map((r) => r.id)).toEqual([2, 1, 3]);
-
-      component.sortByMlRisk(); // asc
+      expect(component.pageIndex).toBe(0);
+      expect(txService.getHeldTransactionsPaged).toHaveBeenCalledWith(0, jasmine.any(Number), 'mlScore,desc');
+      component.sortByMlRisk();
       expect(component.sortDir).toBe('asc');
-      expect(component.rows.map((r) => r.id)).toEqual([1, 2, 3]);
-
-      component.sortByMlRisk(); // off
+      expect(txService.getHeldTransactionsPaged).toHaveBeenCalledWith(0, jasmine.any(Number), 'mlScore,asc');
+      component.sortByMlRisk();
       expect(component.sortDir).toBeNull();
-      expect(component.rows.length).toBe(3);
+      expect(txService.getHeldTransactionsPaged).toHaveBeenCalledWith(0, jasmine.any(Number), undefined);
     });
 
     it('mlBand uses the configured thresholds once bands load', () => {
@@ -292,7 +303,9 @@ describe('FraudReviewComponent', () => {
     });
 
     it('renders the band in the chip text and aria-label', () => {
-      txService.getHeldTransactions.and.returnValue(of([{ ...held(1), mlScore: 0.82 }]));
+      txService.getHeldTransactionsPaged.and.returnValue(
+        of({ content: [{ ...held(1), mlScore: 0.82 }], page: 0, size: 20, totalElements: 1, totalPages: 1 }),
+      );
       component.load();
       fixture.detectChanges();
       const chip: HTMLElement = fixture.nativeElement.querySelector('.ml-chip');

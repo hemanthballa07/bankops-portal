@@ -129,4 +129,9 @@
       </tbody>
     </table>
   </div>
+
+  <mat-paginator *ngIf="!loading && totalElements > 0"
+                 [length]="totalElements" [pageIndex]="pageIndex" [pageSize]="pageSize"
+                 [pageSizeOptions]="[10, 20, 50]" (page)="onPageChange($event)">
+  </mat-paginator>
 </div>
