@@ -163,9 +163,16 @@ public class CaseController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
 
+        com.bankops.portal.dto.CaseTimelineEventDto.EventType et = null;
+        if (eventType != null) {
+            try {
+                et = com.bankops.portal.dto.CaseTimelineEventDto.EventType.valueOf(eventType);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid event type");
+            }
+        }
         com.bankops.portal.timeline.TimelineFilter filter = com.bankops.portal.timeline.TimelineFilter.builder()
-                .eventType(eventType != null ? com.bankops.portal.dto.CaseTimelineEventDto.EventType.valueOf(eventType)
-                        : null)
+                .eventType(et)
                 .fromTimestamp(from)
                 .toTimestamp(to)
                 .page(page)

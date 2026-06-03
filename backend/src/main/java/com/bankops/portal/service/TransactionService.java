@@ -526,7 +526,7 @@ public class TransactionService {
         return transactionRepository.getMonthlySpending(accountId, startDateTime, endDateTime);
     }
 
-    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
+    @Transactional(readOnly = true)
     public TransactionDto getTransaction(Long accountId, Long transactionId) {
         Transaction txn = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new IllegalArgumentException("Transaction not found: " + transactionId));

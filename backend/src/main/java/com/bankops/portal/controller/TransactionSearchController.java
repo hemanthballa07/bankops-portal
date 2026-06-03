@@ -27,7 +27,12 @@ public class TransactionSearchController {
     @GetMapping
     public ResponseEntity<List<TransactionDto>> search(@RequestParam(required = false) String status) {
         if (status != null && !status.isBlank()) {
-            Transaction.TransactionStatus txStatus = Transaction.TransactionStatus.valueOf(status.toUpperCase());
+            Transaction.TransactionStatus txStatus;
+            try {
+                txStatus = Transaction.TransactionStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid status value");
+            }
             return ResponseEntity.ok(transactionService.getTransactionsByStatus(txStatus));
         }
         return ResponseEntity.ok(List.of());
