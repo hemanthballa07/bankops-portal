@@ -2,8 +2,6 @@ package com.bankops.portal.service;
 
 import com.bankops.portal.client.fluxa.FluxaEvalOutcome;
 import com.bankops.portal.client.fluxa.FluxaFraudClient;
-import com.bankops.portal.client.fluxa.FluxaUnavailableException;
-import com.bankops.portal.client.fluxa.FraudFlagDto;
 import com.bankops.portal.client.fluxguard.FluxguardRateLimitClient;
 import com.bankops.portal.client.fluxguard.FluxguardRateLimitOutcome;
 import com.bankops.portal.config.FluxaProperties;
@@ -57,6 +55,7 @@ public class TransactionService {
     private final FluxaProperties fluxaProperties;
     private final FluxguardRateLimitClient fluxguardRateLimitClient;
     private final CaseService caseService;
+    private final FraudGateDispatcher fraudGateDispatcher;
 
     // Self-reference injected via Spring proxy so that @Transactional on withdrawOnce
     // is honoured even when called from within the same bean (self-invocation).
@@ -213,10 +212,9 @@ public class TransactionService {
                 .idempotencyKey(idempotencyKey);
 
         // 6) Fluxa dispatch
-        TransactionDto flagDto = dispatchFluxaOutcome(account, builder, fluxaOutcome,
-                correlationId, false);
-        if (flagDto != null) {
-            return flagDto;
+        Transaction held = fraudGateDispatcher.dispatch(builder, fluxaOutcome, correlationId, false);
+        if (held != null) {
+            return toDto(held);
         }
 
         // 7) Happy path: build COMPLETED tx, save tx, mutate balance, save account.
@@ -285,75 +283,6 @@ public class TransactionService {
                 org.springframework.security.core.context.SecurityContextHolder.getContext()
                         .getAuthentication();
         return auth != null ? auth.getName() : "anonymous";
-    }
-
-    /**
-     * Acts on a precomputed {@link FluxaEvalOutcome}. Returns a non-null DTO when
-     * the outcome forces an early return (HELD on flag); returns null when the
-     * caller should fall through to the success-path tail. Throws to surface
-     * caller-bugs (InvalidArgument → IllegalArgumentException → 400) or
-     * FAIL_CLOSED policy hits (FluxaUnavailableException → 503).
-     */
-    private TransactionDto dispatchFluxaOutcome(Account account, Transaction.TransactionBuilder builder,
-            FluxaEvalOutcome outcome, String correlationId, boolean isDeposit) {
-        if (fluxaProperties.shadowMode()) {
-            // Resolved 2026-06-03: shadow mode is a pure observer — it NEVER throws, even on
-            // InvalidArgument (logged + treated as Allow). Surfacing 400 here is intentionally
-            // NOT done, to keep the observer posture; revisit only if shadow becomes enforcing.
-            Map<String, Object> ctx = new HashMap<>();
-            ctx.put("outcome", outcome.getClass().getSimpleName());
-            if (outcome instanceof FluxaEvalOutcome.Flag flag) {
-                ctx.put("rule_names", flag.flags().stream().map(FraudFlagDto::ruleName).toList());
-            } else if (outcome instanceof FluxaEvalOutcome.InvalidArgument ia) {
-                ctx.put("description", ia.message());
-            }
-            loggingService.logEvent(correlationId, LogEvent.LogLevel.INFO, "fluxa.shadow", ctx);
-            return null;
-        }
-
-        if (outcome instanceof FluxaEvalOutcome.Allow
-                || outcome instanceof FluxaEvalOutcome.Disabled) {
-            return null;
-        }
-        if (outcome instanceof FluxaEvalOutcome.Flag flag) {
-            Transaction held = builder.status(Transaction.TransactionStatus.HELD)
-                    .mlScore(flag.mlScore())
-                    .evaluatedBy(flag.evaluatedBy())
-                    .build();
-            held = transactionRepository.save(held);
-            caseService.createForFraud(held, flag.flags());
-
-            Map<String, Object> newValue = new HashMap<>();
-            newValue.put("status", "HELD");
-            newValue.put("transactionId", held.getId());
-            newValue.put("rules", flag.flags().stream().map(FraudFlagDto::ruleName).toList());
-            auditEventService.recordEvent(
-                    com.bankops.portal.entity.AuditEvent.EntityType.TRANSACTION,
-                    held.getId(),
-                    com.bankops.portal.entity.AuditEvent.Action.CREATE,
-                    new HashMap<>(),
-                    newValue,
-                    correlationId);
-            return toDto(held);
-        }
-        if (outcome instanceof FluxaEvalOutcome.InvalidArgument ia) {
-            throw new IllegalArgumentException("Fluxa rejected: " + ia.message());
-        }
-        if (outcome instanceof FluxaEvalOutcome.Unavailable
-                || outcome instanceof FluxaEvalOutcome.Timeout) {
-            FluxaProperties.Failure policy = isDeposit
-                    ? fluxaProperties.deposit()
-                    : fluxaProperties.withdrawal();
-            if (policy == FluxaProperties.Failure.FAIL_CLOSED) {
-                throw new FluxaUnavailableException();
-            }
-            Map<String, Object> ctx = new HashMap<>();
-            ctx.put("outcome", outcome.getClass().getSimpleName());
-            ctx.put("policy", policy.name());
-            loggingService.logEvent(correlationId, LogEvent.LogLevel.WARN, "fluxa.fail_open", ctx);
-            return null;
-        }
-        return null;
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
@@ -430,10 +359,10 @@ public class TransactionService {
                     .correlationId(correlationId)
                     .description(request.getDescription())
                     .category(category);
-            TransactionDto flagDto = dispatchFluxaOutcome(account, flagBuilder, fluxaOutcome,
+            Transaction held = fraudGateDispatcher.dispatch(flagBuilder, fluxaOutcome,
                     correlationId, transactionType == Transaction.TransactionType.DEPOSIT);
-            if (flagDto != null) {
-                return flagDto;
+            if (held != null) {
+                return toDto(held);
             }
         }
 

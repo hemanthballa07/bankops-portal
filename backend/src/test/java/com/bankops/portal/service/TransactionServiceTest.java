@@ -59,6 +59,9 @@ class TransactionServiceTest {
     @Mock
     private CaseService caseService;
 
+    @Mock
+    private FraudGateDispatcher fraudGateDispatcher;
+
     // FluxaProperties is a record (final class) — use a real instance with Fluxa disabled
     private final FluxaProperties fluxaProperties = new FluxaProperties(
             false, false, "localhost", 9090,
@@ -94,7 +97,7 @@ class TransactionServiceTest {
         transactionService = new TransactionService(
                 transactionRepository, accountRepository, loggingService,
                 auditEventService, fluxaFraudClient, fluxaProperties,
-                fluxguardRateLimitClient, caseService);
+                fluxguardRateLimitClient, caseService, fraudGateDispatcher);
     }
 
     // ========== Successful Transaction Tests ==========
