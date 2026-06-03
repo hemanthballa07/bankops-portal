@@ -26,6 +26,15 @@ export class AdminMlRiskBandsComponent implements OnInit {
     this.load();
   }
 
+  get invalid(): boolean {
+    return !(this.med > 0 && this.high < 1 && this.med < this.high);
+  }
+
+  reset(): void {
+    this.med = 0.4;
+    this.high = 0.7;
+  }
+
   load(): void {
     this.loading = true;
     this.error = null;

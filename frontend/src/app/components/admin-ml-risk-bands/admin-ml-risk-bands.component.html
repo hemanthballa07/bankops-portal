@@ -22,9 +22,13 @@
       <span>High boundary (Med → High)</span>
       <input type="number" step="0.01" min="0" max="1" [(ngModel)]="high" name="high" />
     </label>
-    <button class="save-btn" (click)="save()" [disabled]="saving">
-      <mat-icon>save</mat-icon> {{ saving ? 'Saving…' : 'Save' }}
-    </button>
+    <p *ngIf="invalid" class="validation-hint" role="alert">Require 0 &lt; Med &lt; High &lt; 1.</p>
+    <div class="actions">
+      <button class="save-btn" (click)="save()" [disabled]="saving || invalid">
+        <mat-icon>save</mat-icon> {{ saving ? 'Saving…' : 'Save' }}
+      </button>
+      <button class="reset-btn" type="button" (click)="reset()">Reset to defaults</button>
+    </div>
     <span class="updated" *ngIf="updatedAt">Last updated {{ updatedAt }}</span>
   </div>
 </div>

@@ -69,4 +69,18 @@ describe('AdminMlRiskBandsComponent', () => {
     const banner: HTMLElement = fixture.nativeElement.querySelector('.error-banner');
     expect(banner.getAttribute('role')).toBe('alert');
   });
+
+  it('invalid is true when med >= high or out of (0,1)', () => {
+    component.med = 0.8; component.high = 0.5;
+    expect(component.invalid).toBeTrue();
+    component.med = 0.4; component.high = 0.7;
+    expect(component.invalid).toBeFalse();
+  });
+
+  it('reset restores the 0.40 / 0.70 defaults', () => {
+    component.med = 0.1; component.high = 0.2;
+    component.reset();
+    expect(component.med).toBe(0.4);
+    expect(component.high).toBe(0.7);
+  });
 });

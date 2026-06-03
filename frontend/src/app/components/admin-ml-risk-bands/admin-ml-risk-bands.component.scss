@@ -60,6 +60,27 @@
     }
 
     .updated { font-size: $font-size-xs; color: $color-text-tertiary; }
+
+    .actions {
+        display: flex;
+        gap: $spacing-sm;
+        align-items: center;
+    }
+
+    .reset-btn {
+        background: none;
+        border: 1px solid $color-border;
+        border-radius: $border-radius-lg;
+        padding: $spacing-sm $spacing-lg;
+        cursor: pointer;
+        color: $color-text-secondary;
+    }
+
+    .validation-hint {
+        color: #991B1B;
+        font-size: $font-size-sm;
+        margin: 0;
+    }
 }
 
 .error-banner {
