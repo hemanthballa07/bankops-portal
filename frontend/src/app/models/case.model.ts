@@ -3,6 +3,8 @@ export interface SupportCase {
   customerId: number;
   accountId?: number;
   transactionId?: number;
+  mlScore?: number;     // advisory ML risk of the linked txn (provenance)
+  evaluatedBy?: string; // Fluxa eval/model version that scored the linked txn
   status: string;
   severity: string;
   summary: string;

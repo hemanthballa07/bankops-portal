@@ -345,3 +345,32 @@
     transform: translateY(0);
   }
 }
+
+// ============================================
+// ML RISK CHIP (advisory, from the linked txn)
+// ============================================
+.ml-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: $border-radius-full;
+  font-size: $font-size-xs;
+  font-weight: 600;
+
+  &.low {
+    background: $color-success-bg;
+    color: #065F46;
+  }
+  &.med {
+    background: $color-warning-bg;
+    color: #92400E;
+  }
+  &.high {
+    background: $color-error-bg;
+    color: #991B1B;
+  }
+}
+
+.ml-na {
+  color: $color-text-tertiary;
+}

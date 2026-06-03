@@ -98,6 +98,20 @@
           </td>
         </ng-container>
 
+        <!-- ML Risk Column (advisory; from the linked transaction) -->
+        <ng-container matColumnDef="mlRisk">
+          <th mat-header-cell *matHeaderCellDef>ML risk</th>
+          <td mat-cell *matCellDef="let case">
+            <span *ngIf="case.mlScore != null && case.mlScore > 0"
+                  class="ml-chip" [ngClass]="mlBandClass(case.mlScore)"
+                  [matTooltip]="'Advisory ML fraud probability' + (case.evaluatedBy ? ' (scored by ' + case.evaluatedBy + ')' : '')"
+                  [attr.aria-label]="'ML risk ' + mlBandLabel(case.mlScore) + ', ' + mlPercent(case.mlScore)">
+              {{ mlPercent(case.mlScore) }} {{ mlBandLabel(case.mlScore) }}
+            </span>
+            <span *ngIf="case.mlScore == null || case.mlScore === 0" class="ml-na">—</span>
+          </td>
+        </ng-container>
+
         <!-- Priority Column -->
         <ng-container matColumnDef="priority">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Priority</th>

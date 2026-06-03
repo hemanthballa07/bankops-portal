@@ -7,6 +7,7 @@ import { of, throwError } from 'rxjs';
 import { CasesComponent } from './cases.component';
 import { CaseService } from '../../services/case.service';
 import { CustomerService } from '../../services/customer.service';
+import { MlRiskBandService } from '../../services/ml-risk-band.service';
 import { CaseTimelineComponent } from '../case-timeline/case-timeline.component';
 import { SupportCase } from '../../models/case.model';
 import { Customer } from '../../models/customer.model';
@@ -16,6 +17,7 @@ describe('CasesComponent', () => {
   let fixture: ComponentFixture<CasesComponent>;
   let caseService: jasmine.SpyObj<CaseService>;
   let customerService: jasmine.SpyObj<CustomerService>;
+  let bandService: jasmine.SpyObj<MlRiskBandService>;
 
   const supportCase = (over: Partial<SupportCase> = {}): SupportCase => ({
     id: 1,
@@ -57,6 +59,8 @@ describe('CasesComponent', () => {
     );
     caseService.resolveCase.and.returnValue(of(supportCase({ status: 'RESOLVED' })));
     customerService.searchCustomers.and.returnValue(of([customer]));
+    bandService = jasmine.createSpyObj('MlRiskBandService', ['getBands', 'update']);
+    bandService.getBands.and.returnValue(of({ medThreshold: 0.4, highThreshold: 0.7 } as any));
 
     await TestBed.configureTestingModule({
       imports: [CasesComponent],
@@ -65,6 +69,7 @@ describe('CasesComponent', () => {
         provideRouter([]),
         { provide: CaseService, useValue: caseService },
         { provide: CustomerService, useValue: customerService },
+        { provide: MlRiskBandService, useValue: bandService },
       ],
     }).compileComponents();
 
@@ -74,6 +79,14 @@ describe('CasesComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('mlBandClass/mlBandLabel/mlPercent compute the ML risk chip from configured bands', () => {
+    expect(component.mlBandClass(0.2)).toBe('low');
+    expect(component.mlBandClass(0.5)).toBe('med');
+    expect(component.mlBandClass(0.85)).toBe('high');
+    expect(component.mlBandLabel(0.85)).toBe('High');
+    expect(component.mlPercent(0.82)).toBe('82%');
   });
 
   describe('initialization', () => {

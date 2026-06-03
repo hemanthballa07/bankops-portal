@@ -23,6 +23,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { CaseService } from '../../services/case.service';
 import { CustomerService } from '../../services/customer.service';
+import { MlRiskBandService } from '../../services/ml-risk-band.service';
 import { SupportCase, CreateCaseRequest, UpdateCaseRequest, AddCaseNoteRequest, ResolveCaseRequest } from '../../models/case.model';
 import { Customer } from '../../models/customer.model';
 import { PageHeaderComponent } from '../shared/page-header/page-header.component';
@@ -72,7 +73,8 @@ export class CasesComponent implements OnInit {
 
   dataSource = new MatTableDataSource<EnhancedCase>([]);
   customers: Customer[] = [];
-  displayedColumns: string[] = ['select', 'id', 'customer', 'status', 'severity', 'priority', 'sla', 'summary', 'assignedTo', 'quickActions'];
+  displayedColumns: string[] = ['select', 'id', 'customer', 'status', 'severity', 'mlRisk', 'priority', 'sla', 'summary', 'assignedTo', 'quickActions'];
+  bands = { medThreshold: 0.4, highThreshold: 0.7 };
 
   showCreateForm: boolean = false;
   selectedCase: EnhancedCase | null = null;
@@ -97,12 +99,29 @@ export class CasesComponent implements OnInit {
   constructor(
     private caseService: CaseService,
     private customerService: CustomerService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private bandService: MlRiskBandService
   ) { }
 
   ngOnInit(): void {
     this.loadCustomers();
     this.loadCases();
+    this.bandService.getBands().subscribe({ next: (b) => (this.bands = b), error: () => {} });
+  }
+
+  mlBandClass(score: number): 'low' | 'med' | 'high' {
+    if (score >= this.bands.highThreshold) return 'high';
+    if (score >= this.bands.medThreshold) return 'med';
+    return 'low';
+  }
+
+  mlBandLabel(score: number): string {
+    const b = this.mlBandClass(score);
+    return b === 'high' ? 'High' : b === 'med' ? 'Med' : 'Low';
+  }
+
+  mlPercent(score: number): string {
+    return `${Math.round(score * 100)}%`;
   }
 
   loadCustomers(): void {
