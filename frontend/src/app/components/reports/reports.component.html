@@ -28,6 +28,10 @@
         <h2>Cases by state</h2>
         <ng-container *ngTemplateOutlet="bars; context: { rows: toRows(summary.casesByState, neutralClass) }"></ng-container>
       </section>
+      <section class="panel">
+        <h2>ML risk distribution (holds)</h2>
+        <ng-container *ngTemplateOutlet="bars; context: { rows: toRows(summary.mlRiskByBand, mlBandClass) }"></ng-container>
+      </section>
     </div>
   </ng-container>
 

@@ -78,4 +78,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
         @org.springframework.data.jpa.repository.Query(
             "SELECT t.status, COUNT(t) FROM Transaction t GROUP BY t.status")
         java.util.List<Object[]> countGroupedByStatus();
+
+        @Query("SELECT t.mlScore FROM Transaction t WHERE t.mlScore IS NOT NULL AND t.mlScore > 0")
+        List<Double> findMlScoresAboveZero();
 }

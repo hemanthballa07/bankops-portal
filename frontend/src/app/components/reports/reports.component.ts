@@ -62,4 +62,12 @@ export class ReportsComponent implements OnInit {
   }
 
   neutralClass(_: string): string { return 'bar-info'; }
+
+  mlBandClass(band: string): string {
+    switch (band) {
+      case 'HIGH': return 'bar-error';
+      case 'MED': return 'bar-warning';
+      default: return 'bar-success';
+    }
+  }
 }

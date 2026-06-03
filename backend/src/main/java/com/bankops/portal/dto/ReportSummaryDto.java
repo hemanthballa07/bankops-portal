@@ -16,6 +16,7 @@ public class ReportSummaryDto {
     private Map<String, Long> transactionsByStatus;
     private Map<String, Long> casesByState;
     private Map<String, Long> casesBySeverity;
+    private Map<String, Long> mlRiskByBand;
     private CaseKpiDto caseKpis;
     private long totalTransactions;
     private long totalCases;

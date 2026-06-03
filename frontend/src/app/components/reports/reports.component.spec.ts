@@ -14,6 +14,7 @@ describe('ReportsComponent', () => {
     transactionsByStatus: { COMPLETED: 5, HELD: 2, PENDING: 1 },
     casesByState: { NEW: 3 },
     casesBySeverity: { HIGH: 2, LOW: 1 },
+    mlRiskByBand: { LOW: 1, MED: 1, HIGH: 1 },
     caseKpis: {
       openCases: 3, unassignedCases: 1, slaAtRiskCases: 0,
       highSeverityCases: 2, unassignedHighSeverity: 1,
@@ -79,5 +80,11 @@ describe('ReportsComponent', () => {
     expect(component.severityClass('CRITICAL')).toBe('bar-error');
     expect(component.severityClass('MEDIUM')).toBe('bar-warning');
     expect(component.severityClass('LOW')).toBe('bar-info');
+  });
+
+  it('mlBandClass maps band names to bar classes', () => {
+    expect(component.mlBandClass('LOW')).toBe('bar-success');
+    expect(component.mlBandClass('MED')).toBe('bar-warning');
+    expect(component.mlBandClass('HIGH')).toBe('bar-error');
   });
 });

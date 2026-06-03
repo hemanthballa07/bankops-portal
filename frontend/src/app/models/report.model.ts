@@ -2,6 +2,7 @@ export interface ReportSummary {
   transactionsByStatus: Record<string, number>;
   casesByState: Record<string, number>;
   casesBySeverity: Record<string, number>;
+  mlRiskByBand: Record<string, number>;
   caseKpis: {
     openCases: number;
     unassignedCases: number;
