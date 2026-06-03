@@ -225,6 +225,27 @@ public class FraudGateIntegrationTest {
 
     @Test
     @WithMockUser(roles = "USER")
+    void heldPaged_sortsByMlScoreDescNullsLast_andPagesWithoutBreakingListEndpoint() throws Exception {
+        for (double s : new double[] {0.2, 0.9, 0.5}) {
+            fluxaStub.respondFlag("amount_threshold", "x", s);
+            mockMvc.perform(post("/accounts/{id}/transactions", account.getId())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(depositRequest(new BigDecimal("12500.00")))))
+                    .andExpect(status().isAccepted());
+        }
+        mockMvc.perform(get("/transactions/held").param("page", "0").param("size", "2").param("sort", "mlScore,desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].mlScore").value(closeTo(0.9, 1e-6)))
+                .andExpect(jsonPath("$.content[1].mlScore").value(closeTo(0.5, 1e-6)));
+        mockMvc.perform(get("/transactions").param("status", "HELD"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
     void unavailable_DepositReturns503UnderFailClosed() throws Exception {
         // Test profile = FAIL_CLOSED for both directions.
         fluxaStub.respondError(Status.UNAVAILABLE);

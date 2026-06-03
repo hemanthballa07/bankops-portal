@@ -430,6 +430,31 @@ public class TransactionService {
                 .collect(Collectors.toList());
     }
 
+    public com.bankops.portal.dto.PagedResponse<TransactionDto> getHeldTransactionsPaged(
+            int page, int size, String sort) {
+        org.springframework.data.domain.Sort order;
+        if ("mlScore,desc".equals(sort)) {
+            order = org.springframework.data.domain.Sort.by(
+                    org.springframework.data.domain.Sort.Order.desc("mlScore").nullsLast());
+        } else if ("mlScore,asc".equals(sort)) {
+            order = org.springframework.data.domain.Sort.by(
+                    org.springframework.data.domain.Sort.Order.asc("mlScore").nullsLast());
+        } else {
+            order = org.springframework.data.domain.Sort.by(
+                    org.springframework.data.domain.Sort.Order.desc("createdAt"));
+        }
+        org.springframework.data.domain.Page<Transaction> p = transactionRepository.findByStatus(
+                Transaction.TransactionStatus.HELD,
+                org.springframework.data.domain.PageRequest.of(page, size, order));
+        return com.bankops.portal.dto.PagedResponse.<TransactionDto>builder()
+                .content(p.getContent().stream().map(this::toDto).collect(Collectors.toList()))
+                .page(p.getNumber())
+                .size(p.getSize())
+                .totalElements(p.getTotalElements())
+                .totalPages(p.getTotalPages())
+                .build();
+    }
+
     public PagedResponse<TransactionDto> getFilteredTransactions(Long accountId, TransactionFilterRequest filters) {
         // Convert LocalDate to LocalDateTime for query
         LocalDateTime startDateTime = filters.getStartDate() != null

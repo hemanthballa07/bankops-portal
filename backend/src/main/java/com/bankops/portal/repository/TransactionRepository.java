@@ -81,4 +81,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
         @Query("SELECT t.mlScore FROM Transaction t WHERE t.mlScore IS NOT NULL AND t.mlScore > 0")
         List<Double> findMlScoresAboveZero();
+
+        org.springframework.data.domain.Page<Transaction> findByStatus(
+                Transaction.TransactionStatus status, org.springframework.data.domain.Pageable pageable);
 }

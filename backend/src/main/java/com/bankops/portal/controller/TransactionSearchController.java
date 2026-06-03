@@ -33,6 +33,14 @@ public class TransactionSearchController {
         return ResponseEntity.ok(List.of());
     }
 
+    @GetMapping("/held")
+    public ResponseEntity<com.bankops.portal.dto.PagedResponse<TransactionDto>> heldPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort) {
+        return ResponseEntity.ok(transactionService.getHeldTransactionsPaged(page, size, sort));
+    }
+
     @GetMapping("/by-correlation/{correlationId}")
     public ResponseEntity<TransactionDto> getTransactionByCorrelationId(@PathVariable String correlationId) {
         // Validation
