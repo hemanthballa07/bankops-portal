@@ -38,6 +38,18 @@ describe('TransactionService', () => {
     req.flush([]);
   });
 
+  it('getHeldTransactionsPaged GETs /transactions/held with page/size/sort', () => {
+    service.getHeldTransactionsPaged(1, 20, 'mlScore,desc').subscribe();
+    const req = httpMock.expectOne(
+      (r) => r.url === `${base}/transactions/held`
+        && r.params.get('page') === '1'
+        && r.params.get('size') === '20'
+        && r.params.get('sort') === 'mlScore,desc',
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush({ content: [], page: 1, size: 20, totalElements: 0, totalPages: 0 });
+  });
+
   it('releaseTransaction POSTs an empty body when no request is given', () => {
     service.releaseTransaction(1, 42).subscribe();
     const req = httpMock.expectOne(`${base}/accounts/1/transactions/42/release`);
