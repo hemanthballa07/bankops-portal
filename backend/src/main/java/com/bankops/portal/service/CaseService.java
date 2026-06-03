@@ -200,6 +200,12 @@ public class CaseService {
                                 .transactionId(supportCase.getTransaction() != null
                                                 ? supportCase.getTransaction().getId()
                                                 : null)
+                                .mlScore(supportCase.getTransaction() != null
+                                                ? supportCase.getTransaction().getMlScore()
+                                                : null)
+                                .evaluatedBy(supportCase.getTransaction() != null
+                                                ? supportCase.getTransaction().getEvaluatedBy()
+                                                : null)
                                 .status(supportCase.getState().name())
                                 .severity(supportCase.getSeverity().name())
                                 .summary(supportCase.getSummary())

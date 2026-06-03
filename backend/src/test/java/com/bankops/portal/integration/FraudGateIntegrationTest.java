@@ -215,6 +215,12 @@ public class FraudGateIntegrationTest {
         mockMvc.perform(get("/transactions").param("status", "HELD"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].mlScore").value(closeTo(0.83, 1e-6)));
+
+        // The auto-created P1 fraud case also surfaces the linked txn's ML risk + model
+        mockMvc.perform(get("/cases"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].mlScore").value(closeTo(0.83, 1e-6)))
+                .andExpect(jsonPath("$[0].evaluatedBy").value("test-stub-flag"));
     }
 
     @Test

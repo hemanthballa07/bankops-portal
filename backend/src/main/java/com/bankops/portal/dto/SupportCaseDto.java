@@ -17,6 +17,8 @@ public class SupportCaseDto {
     private Long customerId;
     private Long accountId;
     private Long transactionId;
+    private Double mlScore;       // advisory ML risk of the linked txn (null if none)
+    private String evaluatedBy;   // Fluxa eval/model version that scored the linked txn
     private String status;
     private String severity;
     private String summary;
