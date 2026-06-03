@@ -297,6 +297,9 @@ public class TransactionService {
     private TransactionDto dispatchFluxaOutcome(Account account, Transaction.TransactionBuilder builder,
             FluxaEvalOutcome outcome, String correlationId, boolean isDeposit) {
         if (fluxaProperties.shadowMode()) {
+            // Resolved 2026-06-03: shadow mode is a pure observer — it NEVER throws, even on
+            // InvalidArgument (logged + treated as Allow). Surfacing 400 here is intentionally
+            // NOT done, to keep the observer posture; revisit only if shadow becomes enforcing.
             Map<String, Object> ctx = new HashMap<>();
             ctx.put("outcome", outcome.getClass().getSimpleName());
             if (outcome instanceof FluxaEvalOutcome.Flag flag) {
