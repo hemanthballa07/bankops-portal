@@ -59,7 +59,10 @@
           <th>Transaction</th>
           <th>Account</th>
           <th class="col-right">Amount</th>
-          <th class="col-ml">ML risk</th>
+          <th class="col-ml col-sortable" (click)="sortByMlRisk()" matTooltip="Sort by ML risk">
+            ML risk
+            <span class="sort-arrow" *ngIf="sortDir">{{ sortDir === 'desc' ? '▼' : '▲' }}</span>
+          </th>
           <th>Description</th>
           <th>Correlation ID</th>
           <th>Age</th>

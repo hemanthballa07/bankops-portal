@@ -333,3 +333,16 @@
 .ml-na {
     color: $color-text-tertiary;
 }
+
+.col-sortable {
+    cursor: pointer;
+    user-select: none;
+
+    &:hover { color: $color-text-primary; }
+}
+
+.sort-arrow {
+    margin-left: 4px;
+    font-size: 10px;
+    color: $chrome-accent;
+}

@@ -38,6 +38,7 @@ export class FraudReviewComponent implements OnInit {
   rows: HeldRow[] = [];
   loading = true;
   batchActioning = false;
+  sortDir: 'desc' | 'asc' | null = null;
 
   constructor(
     private txService: TransactionService,
@@ -166,6 +167,22 @@ export class FraudReviewComponent implements OnInit {
 
   mlPercent(score: number): string {
     return `${Math.round(score * 100)}%`;
+  }
+
+  sortByMlRisk(): void {
+    this.sortDir = this.sortDir === null ? 'desc' : this.sortDir === 'desc' ? 'asc' : null;
+    const dir = this.sortDir;
+    const byNewest = (a: HeldRow, b: HeldRow) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    const scored = (r: HeldRow) => r.mlScore != null && r.mlScore > 0;
+    this.rows = [...this.rows].sort((a, b) => {
+      if (dir === null) return byNewest(a, b);
+      const as = scored(a), bs = scored(b);
+      if (!as && !bs) return byNewest(a, b);
+      if (!as) return 1;
+      if (!bs) return -1;
+      return dir === 'desc' ? b.mlScore! - a.mlScore! : a.mlScore! - b.mlScore!;
+    });
   }
 
   timeAgo(dateStr: string): string {

@@ -239,5 +239,25 @@ describe('FraudReviewComponent', () => {
       expect(chips[0].textContent).toContain('82%');
       expect(chips[0].classList).toContain('high');
     });
+
+    it('sortByMlRisk cycles desc → asc → off and ranks scored rows, unscored last', () => {
+      component.rows = [
+        { ...held(1), mlScore: 0.2, selected: false, actioning: false },
+        { ...held(2), mlScore: 0.8, selected: false, actioning: false },
+        { ...held(3), mlScore: undefined, selected: false, actioning: false },
+      ] as any;
+
+      component.sortByMlRisk(); // desc
+      expect(component.sortDir).toBe('desc');
+      expect(component.rows.map((r) => r.id)).toEqual([2, 1, 3]);
+
+      component.sortByMlRisk(); // asc
+      expect(component.sortDir).toBe('asc');
+      expect(component.rows.map((r) => r.id)).toEqual([1, 2, 3]);
+
+      component.sortByMlRisk(); // off
+      expect(component.sortDir).toBeNull();
+      expect(component.rows.length).toBe(3);
+    });
   });
 });
