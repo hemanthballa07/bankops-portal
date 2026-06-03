@@ -97,7 +97,7 @@
                 <span class="amount-tag">{{ formatAmount(tx.amount) }}</span>
               </div>
               <div class="feed-meta">
-                Account #{{ tx.accountId }} &middot; corr {{ tx.correlationId?.slice(0, 8) }}…
+                Account #{{ tx.accountId }} &middot; corr {{ tx.correlationId.slice(0, 8) }}…
               </div>
             </div>
             <div class="feed-time">{{ timeAgo(tx.createdAt) }}</div>

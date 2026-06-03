@@ -73,7 +73,7 @@
     <!-- Replay Snapshot Panel -->
     <div class="replay-panel" *ngIf="replaySnapshot as snap">
         <div class="replay-header">
-            <h3>Snapshot at {{ formatTimestamp(snap.snapshotAt ?? '') }}</h3>
+            <h3>Snapshot at {{ formatTimestamp(snap.snapshotAt) }}</h3>
             <button mat-icon-button (click)="closeReplay()">
                 <mat-icon>close</mat-icon>
             </button>
@@ -110,7 +110,7 @@
 
             <div class="snapshot-field" *ngIf="snap.createdAt">
                 <label>Created:</label>
-                <span>{{ formatTimestamp(snap.createdAt ?? '') }}</span>
+                <span>{{ formatTimestamp(snap.createdAt) }}</span>
             </div>
         </div>
     </div>

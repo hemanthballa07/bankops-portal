@@ -103,7 +103,7 @@
           </td>
           <td class="col-corr">
             <span class="corr-id" [matTooltip]="row.correlationId">
-              {{ row.correlationId?.slice(0, 8) }}…
+              {{ row.correlationId.slice(0, 8) }}…
             </span>
           </td>
           <td class="col-age">{{ timeAgo(row.createdAt) }}</td>
