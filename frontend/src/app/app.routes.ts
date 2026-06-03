@@ -24,6 +24,10 @@ export const routes: Routes = [
     loadComponent: () => import('./components/admin-agents/admin-agents.component').then(m => m.AdminAgentsComponent),
   },
   {
+    path: 'admin/sla-config', canActivate: [authGuard],
+    loadComponent: () => import('./components/admin-sla-config/admin-sla-config.component').then(m => m.AdminSlaConfigComponent),
+  },
+  {
     path: 'customers', canActivate: [authGuard],
     loadComponent: () => import('./components/customers/customers.component').then(m => m.CustomersComponent),
   },

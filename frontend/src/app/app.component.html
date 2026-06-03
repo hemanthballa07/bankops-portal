@@ -64,6 +64,10 @@
              [matTooltip]="sidebarCollapsed ? 'Admin' : ''" matTooltipPosition="right">
             <mat-icon>admin_panel_settings</mat-icon><span *ngIf="!sidebarCollapsed">Admin</span>
           </a>
+          <a mat-list-item routerLink="/admin/sla-config" routerLinkActive="active"
+             [matTooltip]="sidebarCollapsed ? 'SLA Settings' : ''" matTooltipPosition="right">
+            <mat-icon>schedule</mat-icon><span *ngIf="!sidebarCollapsed">SLA Settings</span>
+          </a>
         </mat-nav-list>
       </mat-sidenav>
       <mat-sidenav-content class="main-content">
