@@ -36,6 +36,7 @@ class SlaServiceTest {
 
     private SlaStatusChangeEventRepository slaEventRepository;
     private SlaConfiguration slaConfiguration;
+    private SlaConfigService slaConfigService;
     private SlaService slaService;
     private Clock fixedClock;
     private SupportCase testCase;
@@ -47,8 +48,11 @@ class SlaServiceTest {
         slaConfiguration = new SlaConfiguration();
         ReflectionTestUtils.setField(slaConfiguration, "atRiskThreshold", 0.8);
         slaEventRepository = mock(SlaStatusChangeEventRepository.class);
+        slaConfigService = mock(SlaConfigService.class);
+        lenient().when(slaConfigService.getDuration(any()))
+                .thenAnswer(inv -> ((SlaPriority) inv.getArgument(0)).getSlaDuration());
 
-        slaService = new SlaService(slaConfiguration, slaEventRepository, fixedClock);
+        slaService = new SlaService(slaConfiguration, slaEventRepository, slaConfigService,fixedClock);
 
         testCase = SupportCase.builder()
                 .id(1L)
@@ -125,7 +129,7 @@ class SlaServiceTest {
 
         // Advance clock by 2 hours
         Clock advancedClock = Clock.fixed(BASE_TIME.plus(Duration.ofHours(2)), ZoneId.systemDefault());
-        slaService = new SlaService(slaConfiguration, slaEventRepository, advancedClock);
+        slaService = new SlaService(slaConfiguration, slaEventRepository, slaConfigService,advancedClock);
 
         // When - Resume
         slaService.resumeSla(testCase);
@@ -148,13 +152,13 @@ class SlaServiceTest {
         // First pause/resume (1 hour)
         slaService.pauseSla(testCase);
         Clock clock1 = Clock.fixed(BASE_TIME.plus(Duration.ofHours(1)), ZoneId.systemDefault());
-        slaService = new SlaService(slaConfiguration, slaEventRepository, clock1);
+        slaService = new SlaService(slaConfiguration, slaEventRepository, slaConfigService,clock1);
         slaService.resumeSla(testCase);
 
         // Second pause/resume (30 minutes)
         slaService.pauseSla(testCase);
         Clock clock2 = Clock.fixed(BASE_TIME.plus(Duration.ofMinutes(90)), ZoneId.systemDefault());
-        slaService = new SlaService(slaConfiguration, slaEventRepository, clock2);
+        slaService = new SlaService(slaConfiguration, slaEventRepository, slaConfigService,clock2);
         slaService.resumeSla(testCase);
 
         // Then
@@ -171,7 +175,7 @@ class SlaServiceTest {
         slaService.initializeSla(testCase, SlaPriority.P2);
 
         Clock advancedClock = Clock.fixed(BASE_TIME.plus(Duration.ofHours(50)), ZoneId.systemDefault());
-        slaService = new SlaService(slaConfiguration, slaEventRepository, advancedClock);
+        slaService = new SlaService(slaConfiguration, slaEventRepository, slaConfigService,advancedClock);
 
         // When
         SlaStatus status = slaService.computeSlaStatus(testCase);
@@ -186,7 +190,7 @@ class SlaServiceTest {
         slaService.initializeSla(testCase, SlaPriority.P2);
 
         Clock advancedClock = Clock.fixed(BASE_TIME.plus(Duration.ofHours(58)), ZoneId.systemDefault());
-        slaService = new SlaService(slaConfiguration, slaEventRepository, advancedClock);
+        slaService = new SlaService(slaConfiguration, slaEventRepository, slaConfigService,advancedClock);
 
         // When
         SlaStatus status = slaService.computeSlaStatus(testCase);
@@ -201,7 +205,7 @@ class SlaServiceTest {
         slaService.initializeSla(testCase, SlaPriority.P1);
 
         Clock advancedClock = Clock.fixed(BASE_TIME.plus(Duration.ofHours(25)), ZoneId.systemDefault());
-        slaService = new SlaService(slaConfiguration, slaEventRepository, advancedClock);
+        slaService = new SlaService(slaConfiguration, slaEventRepository, slaConfigService,advancedClock);
 
         // When
         SlaStatus status = slaService.computeSlaStatus(testCase);
@@ -218,13 +222,13 @@ class SlaServiceTest {
         // Pause for 10 hours
         slaService.pauseSla(testCase);
         Clock pausedClock = Clock.fixed(BASE_TIME.plus(Duration.ofHours(10)), ZoneId.systemDefault());
-        slaService = new SlaService(slaConfiguration, slaEventRepository, pausedClock);
+        slaService = new SlaService(slaConfiguration, slaEventRepository, slaConfigService,pausedClock);
         slaService.resumeSla(testCase);
 
         // Advance another 60 hours (total real time = 70 hours, but 10 were paused)
         // Effective elapsed = 60 hours = 83% of 72 hours
         Clock finalClock = Clock.fixed(BASE_TIME.plus(Duration.ofHours(70)), ZoneId.systemDefault());
-        slaService = new SlaService(slaConfiguration, slaEventRepository, finalClock);
+        slaService = new SlaService(slaConfiguration, slaEventRepository, slaConfigService,finalClock);
 
         // When
         SlaStatus status = slaService.computeSlaStatus(testCase);
@@ -243,7 +247,7 @@ class SlaServiceTest {
 
         // Advance to breach
         Clock breachedClock = Clock.fixed(BASE_TIME.plus(Duration.ofHours(25)), ZoneId.systemDefault());
-        slaService = new SlaService(slaConfiguration, slaEventRepository, breachedClock);
+        slaService = new SlaService(slaConfiguration, slaEventRepository, slaConfigService,breachedClock);
 
         when(slaEventRepository.save(any(SlaStatusChangeEvent.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -288,7 +292,7 @@ class SlaServiceTest {
         slaService.initializeSla(testCase, SlaPriority.P1);
 
         Clock advancedClock = Clock.fixed(BASE_TIME.plus(Duration.ofHours(10)), ZoneId.systemDefault());
-        slaService = new SlaService(slaConfiguration, slaEventRepository, advancedClock);
+        slaService = new SlaService(slaConfiguration, slaEventRepository, slaConfigService,advancedClock);
 
         // When
         Duration remaining = slaService.getRemainingTime(testCase);
@@ -303,12 +307,37 @@ class SlaServiceTest {
         slaService.initializeSla(testCase, SlaPriority.P1);
 
         Clock advancedClock = Clock.fixed(BASE_TIME.plus(Duration.ofHours(26)), ZoneId.systemDefault());
-        slaService = new SlaService(slaConfiguration, slaEventRepository, advancedClock);
+        slaService = new SlaService(slaConfiguration, slaEventRepository, slaConfigService,advancedClock);
 
         // When
         Duration remaining = slaService.getRemainingTime(testCase);
 
         // Then
         assertEquals(Duration.ofHours(-2), remaining);
+    }
+
+    // ========== Config-driven duration tests ==========
+
+    @Test
+    void initializeSla_usesConfiguredOverrideDuration() {
+        when(slaConfigService.getDuration(SlaPriority.P1)).thenReturn(Duration.ofHours(1));
+
+        slaService.initializeSla(testCase, SlaPriority.P1);
+
+        assertEquals(LocalDateTime.now(fixedClock).plusHours(1), testCase.getSlaDueAt());
+    }
+
+    @Test
+    void computeSlaStatus_usesCaseWindow_notLiveConfig() {
+        // Existing P2 case (72h window) already initialized. computeSlaStatus derives the window
+        // from the case's own slaDueAt/createdAt, so it never consults SlaConfigService — proving
+        // a later config change cannot retroactively move an in-flight case (new-cases-only).
+        slaService.initializeSla(testCase, SlaPriority.P2); // slaDueAt = T0 + 72h
+
+        // 58h elapsed = 80.5% of the case's own 72h window -> AT_RISK
+        Clock advanced = Clock.fixed(BASE_TIME.plus(Duration.ofHours(58)), ZoneId.systemDefault());
+        slaService = new SlaService(slaConfiguration, slaEventRepository, slaConfigService, advanced);
+
+        assertEquals(SlaStatus.AT_RISK, slaService.computeSlaStatus(testCase));
     }
 }

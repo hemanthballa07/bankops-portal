@@ -23,6 +23,7 @@ public class SlaService {
 
     private final SlaConfiguration slaConfiguration;
     private final SlaStatusChangeEventRepository slaEventRepository;
+    private final SlaConfigService slaConfigService;
     private final Clock clock;
 
     /**
@@ -36,7 +37,7 @@ public class SlaService {
         }
 
         LocalDateTime now = LocalDateTime.now(clock);
-        Duration slaDuration = priority.getSlaDuration();
+        Duration slaDuration = slaConfigService.getDuration(priority);
 
         supportCase.setPriority(priority);
         supportCase.setSlaDueAt(now.plus(slaDuration));
@@ -137,7 +138,14 @@ public class SlaService {
 
         // Calculate elapsed percentage
         LocalDateTime createdAt = supportCase.getCreatedAt();
-        Duration totalDuration = supportCase.getPriority().getSlaDuration();
+        // Derive the SLA window from the case's own fields so status is independent of live config
+        // (new cases pick up new durations via initializeSla; in-flight cases stay stable).
+        // (slaDueAt - createdAt) - totalPaused == the duration used when the case was initialized.
+        Duration totalDuration = Duration.between(createdAt, dueAt)
+                .minusSeconds(supportCase.getTotalPausedDurationSeconds());
+        if (totalDuration.isZero() || totalDuration.isNegative()) {
+            return SlaStatus.ON_TRACK; // malformed window; not breached (breach checked above)
+        }
         Duration elapsed = Duration.between(createdAt, effectiveNow);
 
         // Subtract paused time from elapsed
