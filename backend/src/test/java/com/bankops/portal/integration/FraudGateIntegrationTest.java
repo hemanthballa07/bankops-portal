@@ -1,6 +1,8 @@
 package com.bankops.portal.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.closeTo;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -192,6 +194,30 @@ public class FraudGateIntegrationTest {
 
     @Test
     @WithMockUser(roles = "USER")
+    void flag_PersistsMlScoreAndExposesItOnDtoAndHeldList() throws Exception {
+        fluxaStub.respondFlag("amount_threshold", "amount=12500 > 500", 0.83);
+        CreateTransactionRequest req = depositRequest(new BigDecimal("12500.00"));
+
+        // Create-response DTO carries the score
+        mockMvc.perform(post("/accounts/{id}/transactions", account.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.status").value("HELD"))
+                .andExpect(jsonPath("$.mlScore").value(closeTo(0.83, 1e-6)));
+
+        // Persisted on the entity
+        assertThat(transactionRepository.findAll()).hasSize(1);
+        assertThat(transactionRepository.findAll().get(0).getMlScore()).isEqualTo(0.83);
+
+        // Exposed on the HELD list endpoint
+        mockMvc.perform(get("/transactions").param("status", "HELD"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].mlScore").value(closeTo(0.83, 1e-6)));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
     void unavailable_DepositReturns503UnderFailClosed() throws Exception {
         // Test profile = FAIL_CLOSED for both directions.
         fluxaStub.respondError(Status.UNAVAILABLE);
@@ -288,6 +314,19 @@ public class FraudGateIntegrationTest {
                             .setRuleValue(ruleValue))
                     .setEvaluatedBy("test-stub-flag")
                     .setLatencyMs(5.0)
+                    .build();
+        }
+
+        void respondFlag(String ruleName, String ruleValue, double mlScore) {
+            this.error = null;
+            this.response = EvaluateResponse.newBuilder()
+                    .setDecision(Decision.DECISION_FLAG)
+                    .addFlags(FraudFlag.newBuilder()
+                            .setRuleName(ruleName)
+                            .setRuleValue(ruleValue))
+                    .setEvaluatedBy("test-stub-flag")
+                    .setLatencyMs(5.0)
+                    .setMlScore(mlScore)
                     .build();
         }
 

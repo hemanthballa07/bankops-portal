@@ -58,6 +58,12 @@ public class Transaction {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // Advisory blended ML fraud probability in [0,1] from Fluxa's scorer, captured
+    // at FLAG/HELD time. Nullable: null = pre-feature / never fraud-evaluated.
+    // Display-only — never used to gate the hold decision.
+    @Column(name = "ml_score")
+    private Double mlScore;
+
     @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<SupportCase> cases = new ArrayList<>();

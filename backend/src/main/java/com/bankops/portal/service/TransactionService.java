@@ -313,7 +313,9 @@ public class TransactionService {
             return null;
         }
         if (outcome instanceof FluxaEvalOutcome.Flag flag) {
-            Transaction held = builder.status(Transaction.TransactionStatus.HELD).build();
+            Transaction held = builder.status(Transaction.TransactionStatus.HELD)
+                    .mlScore(flag.mlScore())
+                    .build();
             held = transactionRepository.save(held);
             caseService.createForFraud(held, flag.flags());
 
@@ -694,6 +696,7 @@ public class TransactionService {
                 .description(transaction.getDescription())
                 .category(transaction.getCategory().name())
                 .createdAt(transaction.getCreatedAt())
+                .mlScore(transaction.getMlScore())
                 .build();
     }
 }

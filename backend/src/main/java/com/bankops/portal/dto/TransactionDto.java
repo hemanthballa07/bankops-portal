@@ -22,6 +22,7 @@ public class TransactionDto {
     private String description;
     private String category;
     private LocalDateTime createdAt;
+    private Double mlScore;
 }
 
 
