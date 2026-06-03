@@ -1,7 +1,7 @@
 <ng-container *ngIf="(showShell$ | async); else bare">
   <div class="app-container">
     <mat-toolbar class="brand-bar dark">
-      <button mat-icon-button (click)="toggleSidebar()" class="sidebar-toggle">
+      <button mat-icon-button (click)="toggleSidebar()" class="sidebar-toggle" aria-label="Toggle navigation">
         <mat-icon>menu</mat-icon>
       </button>
       <div class="brand-lockup">
@@ -11,21 +11,21 @@
       </div>
       <span class="spacer"></span>
       <div class="topbar-actions">
-        <button mat-icon-button class="topbar-btn" matTooltip="Notifications"
+        <button mat-icon-button class="topbar-btn" matTooltip="Notifications" aria-label="Notifications"
                 (click)="toggleRail()"
                 [matBadge]="(actionableCount$ | async)"
                 [matBadgeHidden]="!(actionableCount$ | async)"
                 matBadgeColor="warn" matBadgeSize="small">
           <mat-icon>notifications_none</mat-icon>
         </button>
-        <button mat-icon-button class="topbar-btn" matTooltip="Help">
+        <button mat-icon-button class="topbar-btn" matTooltip="Help" aria-label="Help">
           <mat-icon>help_outline</mat-icon>
         </button>
         <div class="avatar-pill">
           <mat-icon>account_circle</mat-icon>
           <span *ngIf="!sidebarCollapsed">{{ (currentUser$ | async)?.username || 'User' }}</span>
         </div>
-        <button mat-icon-button class="topbar-btn" matTooltip="Sign out" (click)="logout()">
+        <button mat-icon-button class="topbar-btn" matTooltip="Sign out" (click)="logout()" aria-label="Sign out">
           <mat-icon>logout</mat-icon>
         </button>
       </div>

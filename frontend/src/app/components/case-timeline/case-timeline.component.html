@@ -1,7 +1,7 @@
 <div class="timeline-container">
     <div class="timeline-header">
         <h2>Case Timeline #{{ caseId }}</h2>
-        <button mat-icon-button (click)="close()">
+        <button mat-icon-button (click)="close()" aria-label="Close timeline">
             <mat-icon>close</mat-icon>
         </button>
     </div>
@@ -74,7 +74,7 @@
     <div class="replay-panel" *ngIf="replaySnapshot as snap">
         <div class="replay-header">
             <h3>Snapshot at {{ formatTimestamp(snap.snapshotAt) }}</h3>
-            <button mat-icon-button (click)="closeReplay()">
+            <button mat-icon-button (click)="closeReplay()" aria-label="Close replay">
                 <mat-icon>close</mat-icon>
             </button>
         </div>
