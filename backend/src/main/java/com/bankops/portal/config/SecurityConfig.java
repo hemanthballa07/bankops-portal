@@ -53,6 +53,7 @@ public class SecurityConfig {
                                                 .requestMatchers("/notifications/**").hasAnyRole("USER", "SUPPORT")
                                                 .requestMatchers("/audit/**").hasAnyRole("ADMIN", "SUPPORT")
                                                 .requestMatchers("/agents/**").hasRole("ADMIN")
+                                                .requestMatchers("/admin/**").hasRole("ADMIN")
                                                 .anyRequest().authenticated())
                                 .addFilterBefore(whoamiRateLimitFilter,
                                                 org.springframework.security.web.authentication.www.BasicAuthenticationFilter.class)
