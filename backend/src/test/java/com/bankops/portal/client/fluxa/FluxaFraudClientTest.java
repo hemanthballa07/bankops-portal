@@ -75,6 +75,7 @@ class FluxaFraudClientTest {
                 .addFlags(FraudFlag.newBuilder()
                         .setRuleName("amount_threshold")
                         .setRuleValue("amount=15000 > 500"))
+                .setMlScore(0.78)
                 .build();
         when(stub.evaluateTransaction(any(EvaluateRequest.class))).thenReturn(resp);
         FluxaFraudClient client = new FluxaFraudClient(stub, enabledProps, loggingService);
@@ -85,6 +86,20 @@ class FluxaFraudClientTest {
         assertThat(flag.flags()).hasSize(1);
         assertThat(flag.flags().get(0).ruleName()).isEqualTo("amount_threshold");
         assertThat(flag.flags().get(0).ruleValue()).isEqualTo("amount=15000 > 500");
+        assertThat(flag.mlScore()).isEqualTo(0.78);
+    }
+
+    @Test
+    void flagResponse_withoutMlScore_defaultsToZero() {
+        EvaluateResponse resp = EvaluateResponse.newBuilder()
+                .setDecision(Decision.DECISION_FLAG)
+                .addFlags(FraudFlag.newBuilder().setRuleName("velocity").setRuleValue("x"))
+                .build();
+        when(stub.evaluateTransaction(any(EvaluateRequest.class))).thenReturn(resp);
+        FluxaFraudClient client = new FluxaFraudClient(stub, enabledProps, loggingService);
+        FluxaEvalOutcome outcome = client.evaluate("cid", 1L, BigDecimal.TEN, "USD", "",
+                Instant.now());
+        assertThat(((FluxaEvalOutcome.Flag) outcome).mlScore()).isEqualTo(0.0);
     }
 
     @Test

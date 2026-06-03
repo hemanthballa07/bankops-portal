@@ -81,7 +81,7 @@ public class FluxaFraudClient {
             List<FraudFlagDto> flags = resp.getFlagsList().stream()
                     .map(p -> new FraudFlagDto(p.getRuleName(), p.getRuleValue()))
                     .collect(Collectors.toList());
-            return new FluxaEvalOutcome.Flag(flags);
+            return new FluxaEvalOutcome.Flag(flags, resp.getMlScore());
         }
         return new FluxaEvalOutcome.Allow();
     }
@@ -103,6 +103,7 @@ public class FluxaFraudClient {
         ctx.put("decision", resp.getDecision().name());
         ctx.put("latency_ms", (System.nanoTime() - startNanos) / 1_000_000.0);
         ctx.put("evaluated_by", resp.getEvaluatedBy());
+        ctx.put("ml_score", resp.getMlScore());
         if (outcome instanceof FluxaEvalOutcome.Flag flag) {
             ctx.put("rule_names", flag.flags().stream().map(FraudFlagDto::ruleName).toList());
         }

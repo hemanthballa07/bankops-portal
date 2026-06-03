@@ -18,8 +18,12 @@ public sealed interface FluxaEvalOutcome
     record Allow() implements FluxaEvalOutcome {
     }
 
-    /** Fluxa returned DECISION_FLAG — caller transitions tx to HELD. */
-    record Flag(List<FraudFlagDto> flags) implements FluxaEvalOutcome {
+    /**
+     * Fluxa returned DECISION_FLAG — caller transitions tx to HELD.
+     * {@code mlScore} is the advisory blended ML probability in [0,1] (0 when the
+     * scorer did not contribute). Display-only — never used to gate the hold.
+     */
+    record Flag(List<FraudFlagDto> flags, double mlScore) implements FluxaEvalOutcome {
     }
 
     /** Fluxa returned Status.UNAVAILABLE or a non-deadline transport error. */
