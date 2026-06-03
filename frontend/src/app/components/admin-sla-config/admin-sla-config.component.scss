@@ -1,0 +1,64 @@
+@import '../../../styles/variables';
+
+.admin-container {
+  padding: $spacing-lg;
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: $spacing-lg;
+
+    h1 { margin: 0; font-size: $font-size-xl; color: $color-text-primary; }
+    .helper-text { margin: $spacing-xs 0 0; color: $color-text-secondary; font-size: $font-size-sm; }
+  }
+
+  .state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: $spacing-2xl;
+    color: $color-text-secondary;
+    &.error mat-icon { color: $color-error; }
+  }
+
+  .panel {
+    background: $color-bg-primary;
+    border: $border-width solid $color-border;
+    border-radius: $border-radius-xl;
+    padding: $spacing-lg;
+  }
+
+  .sla-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th, td {
+      text-align: left;
+      padding: $spacing-sm $spacing-md;
+      border-bottom: $border-width solid $color-border;
+    }
+    th { color: $color-text-secondary; font-size: $font-size-sm; font-weight: 600; }
+    .priority { font-weight: 600; color: $color-text-primary; }
+    input {
+      width: 100px;
+      padding: $spacing-xs $spacing-sm;
+      border: $border-width solid $color-border;
+      border-radius: $border-radius-md;
+    }
+  }
+
+  .primary-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-xs;
+    background: $chrome-accent;
+    color: #fff;
+    border: none;
+    padding: $spacing-xs $spacing-md;
+    border-radius: $border-radius-md;
+    cursor: pointer;
+    &:disabled { opacity: 0.6; cursor: default; }
+  }
+}

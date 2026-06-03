@@ -1,0 +1,26 @@
+<div class="admin-container">
+  <header class="page-header">
+    <div>
+      <h1>Admin &middot; SLA Settings</h1>
+      <p class="helper-text">Edit the SLA duration (hours) per priority. Changes apply to new cases only.</p>
+    </div>
+  </header>
+
+  <div *ngIf="loading" class="state"><mat-spinner diameter="40"></mat-spinner></div>
+  <div *ngIf="error && !loading" class="state error"><mat-icon>error_outline</mat-icon><p>{{ error }}</p></div>
+
+  <section class="panel" *ngIf="!loading">
+    <table class="sla-table">
+      <thead>
+        <tr><th>Priority</th><th>SLA (hours)</th><th></th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of rows">
+          <td class="priority">{{ row.priority }}</td>
+          <td><input type="number" min="1" [(ngModel)]="row.hours" /></td>
+          <td><button class="primary-btn" [disabled]="row.saving" (click)="save(row)">Save</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</div>
