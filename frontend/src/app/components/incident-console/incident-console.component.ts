@@ -16,6 +16,7 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTabsModule } from '@angular/material/tabs';
 import { IncidentService } from '../../services/incident.service';
 import { IncidentResponse, LogEvent, IncidentSummary, IncidentKpis, IncidentFilters } from '../../models/incident.model';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-incident-console',
@@ -108,8 +109,9 @@ export class IncidentConsoleComponent implements OnInit {
   }
 
   loadIncidents(): void {
-    // Mock incidents for now - replace with real API call
-    this.incidents = this.generateMockIncidents();
+    // The incident-list API is not yet wired. Show demo rows only outside production
+    // so mock/random data never ships to a production build.
+    this.incidents = environment.production ? [] : this.generateMockIncidents();
     this.totalElements = this.incidents.length;
   }
 

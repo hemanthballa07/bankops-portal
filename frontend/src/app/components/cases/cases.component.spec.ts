@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
+import { MatCheckboxChange } from '@angular/material/checkbox';
 import { of, throwError } from 'rxjs';
 
 import { CasesComponent } from './cases.component';
@@ -161,12 +162,12 @@ describe('CasesComponent', () => {
     });
 
     it('toggleAll selects and deselects every row', () => {
-      component.toggleAll({ checked: true });
+      component.toggleAll({ checked: true } as MatCheckboxChange);
       expect(component.dataSource.data.every((c) => c.selected)).toBeTrue();
       expect(component.isAllSelected()).toBeTrue();
       expect(component.getSelectedCount()).toBe(2);
 
-      component.toggleAll({ checked: false });
+      component.toggleAll({ checked: false } as MatCheckboxChange);
       expect(component.isAllSelected()).toBeFalse();
       expect(component.getSelectedCount()).toBe(0);
     });

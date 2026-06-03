@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -38,13 +39,15 @@ export class AuditTimelineComponent implements OnInit {
     entityType: string = '';
     entityId: number = 0;
 
+    private destroyRef = inject(DestroyRef);
+
     constructor(
         private auditService: AuditService,
         private route: ActivatedRoute
     ) { }
 
     ngOnInit(): void {
-        this.route.params.subscribe(params => {
+        this.route.params.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
             this.entityType = params['entityType'];
             this.entityId = +params['entityId'];
             this.loadAuditEvents();

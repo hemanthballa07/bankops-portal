@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TransactionFilterRequest } from '../../models/transaction.model';
 import { debounceTime, Subject } from 'rxjs';
 
@@ -125,7 +126,7 @@ import { debounceTime, Subject } from 'rxjs';
 export class TransactionFilterComponent {
     @Output() filterChange = new EventEmitter<TransactionFilterRequest>();
 
-    filters: any = {
+    filters: { startDate: Date | null; endDate: Date | null; type: string | null; status: string | null } = {
         startDate: null,
         endDate: null,
         type: null,
@@ -136,9 +137,10 @@ export class TransactionFilterComponent {
     private searchSubject = new Subject<string>();
 
     constructor() {
-        // Debounce search input
+        // Debounce search input; takeUntilDestroyed (constructor injection context) cleans it up.
         this.searchSubject.pipe(
-            debounceTime(300)
+            debounceTime(300),
+            takeUntilDestroyed()
         ).subscribe(searchText => {
             this.emitFilters(searchText);
         });

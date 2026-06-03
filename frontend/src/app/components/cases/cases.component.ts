@@ -13,7 +13,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatCheckboxModule, MatCheckboxChange } from '@angular/material/checkbox';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -191,7 +191,7 @@ export class CasesComponent implements OnInit {
     return numSelected === numRows;
   }
 
-  toggleAll(event: any) {
+  toggleAll(event: MatCheckboxChange) {
     const checked = event.checked;
     this.dataSource.data.forEach(c => c.selected = checked);
   }
